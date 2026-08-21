@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import html.parser
+import io
 import json
 import os
 import random
@@ -116,6 +118,33 @@ def parse_payload(raw: bytes, dataset: Dataset) -> dict:
     return payload
 
 
+def csv_url(url: str) -> str:
+    parts = urllib.parse.urlsplit(url)
+    query = urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
+    query = [(name, "csv" if name.lower() == "ext" else value) for name, value in query]
+    return urllib.parse.urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urllib.parse.urlencode(query), parts.fragment)
+    )
+
+
+def parse_csv_payload(raw: bytes, dataset: Dataset) -> list[list[str]]:
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{csv_url(dataset.url)} is not valid UTF-8 CSV") from exc
+
+    try:
+        rows = list(csv.reader(io.StringIO(text, newline=""), strict=True))
+    except csv.Error as exc:
+        raise ValueError(f"{csv_url(dataset.url)} did not return valid CSV") from exc
+    if not rows or "SAILNUMB" not in rows[0]:
+        raise ValueError(f"{csv_url(dataset.url)} has no SAILNUMB header")
+    width = len(rows[0])
+    if any(len(row) != width for row in rows[1:]):
+        raise ValueError(f"{csv_url(dataset.url)} contains rows with inconsistent widths")
+    return rows
+
+
 def boat_sort_key(boat: dict) -> tuple[str, ...]:
     return tuple(
         str(boat.get(field) or "").casefold()
@@ -146,6 +175,24 @@ def normalize_payload(payload: dict) -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def normalize_csv_payload(rows: list[list[str]]) -> bytes:
+    header = rows[0]
+    indexes = [
+        header.index(field)
+        for field in ("SAILNUMB", "NAME", "FILE_ID", "CERTN.")
+        if field in header
+    ]
+    boats = sorted(
+        rows[1:],
+        key=lambda row: tuple(row[index].casefold() for index in indexes),
+    )
+    output = io.StringIO(newline="")
+    writer = csv.writer(output, lineterminator="\n")
+    writer.writerow(header)
+    writer.writerows(boats)
+    return output.getvalue().encode("utf-8")
+
+
 def sail_label(boat: dict) -> str:
     for field in ("SailNo", "YachtName", "RefNo", "CertNo", "BIN"):
         value = str(boat.get(field) or "").strip()
@@ -173,6 +220,14 @@ def changed_sail_numbers(old: dict | None, new: dict) -> tuple[str, ...]:
     return tuple(sorted((label for label in labels if before.get(label) != after.get(label)), key=str.casefold))
 
 
+def removed_certificate_refs(old: dict | None, new: dict) -> tuple[str, ...]:
+    if old is None:
+        return ()
+    before = {str(boat.get("RefNo") or "").strip() for boat in old["rms"]}
+    after = {str(boat.get("RefNo") or "").strip() for boat in new["rms"]}
+    return tuple(sorted((before - after) - {""}, key=str.casefold))
+
+
 def read_existing(path: Path, dataset: Dataset) -> dict | None:
     if not path.exists():
         return None
@@ -198,6 +253,7 @@ def update_archive(
     data_dir: Path,
     family: int = 1,
     workers: int = 4,
+    max_deletions: int = 25,
     fetcher: Callable[[str], bytes] = fetch,
     index_url: str = INDEX_URL,
 ) -> list[Change]:
@@ -206,26 +262,82 @@ def update_archive(
     if not datasets:
         raise RuntimeError(f"no Family={family} JSON datasets found at {index_url}")
 
-    downloaded: dict[Dataset, dict] = {}
+    downloaded_json: dict[Dataset, dict] = {}
+    downloaded_csv: dict[Dataset, list[list[str]]] = {}
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {executor.submit(fetcher, dataset.url): dataset for dataset in datasets}
+        futures = {}
+        for dataset in datasets:
+            futures[executor.submit(fetcher, dataset.url)] = (dataset, "json")
+            futures[executor.submit(fetcher, csv_url(dataset.url))] = (dataset, "csv")
         for future in as_completed(futures):
-            dataset = futures[future]
-            downloaded[dataset] = parse_payload(future.result(), dataset)
+            dataset, extension = futures[future]
+            if extension == "json":
+                downloaded_json[dataset] = parse_payload(future.result(), dataset)
+            else:
+                downloaded_csv[dataset] = parse_csv_payload(future.result(), dataset)
+
+    prepared = []
+    removed_by_dataset: list[tuple[Dataset, tuple[str, ...]]] = []
+    for dataset in datasets:
+        payload = downloaded_json[dataset]
+        json_path = data_dir / str(dataset.year) / f"{dataset.country}.json"
+        csv_path = data_dir / str(dataset.year) / f"{dataset.country}.csv"
+        json_content = normalize_payload(payload)
+        csv_content = normalize_csv_payload(downloaded_csv[dataset])
+        json_changed = not json_path.exists() or json_path.read_bytes() != json_content
+        csv_changed = not csv_path.exists() or csv_path.read_bytes() != csv_content
+        old = read_existing(json_path, dataset)
+        removed = removed_certificate_refs(old, payload)
+        if removed:
+            removed_by_dataset.append((dataset, removed))
+        prepared.append(
+            (
+                dataset,
+                payload,
+                old,
+                json_path,
+                csv_path,
+                json_content,
+                csv_content,
+                json_changed,
+                csv_changed,
+            )
+        )
+
+    deletion_count = sum(len(refs) for _, refs in removed_by_dataset)
+    if deletion_count > max_deletions:
+        details = "; ".join(
+            f"{dataset.year}/{dataset.country}: {', '.join(refs[:5])}"
+            + (f" (+{len(refs) - 5} more)" if len(refs) > 5 else "")
+            for dataset, refs in removed_by_dataset
+        )
+        raise RuntimeError(
+            f"refusing to archive {deletion_count} certificate removals "
+            f"(limit: {max_deletions}); {details}"
+        )
 
     changes: list[Change] = []
-    for dataset in datasets:
-        payload = downloaded[dataset]
-        path = data_dir / str(dataset.year) / f"{dataset.country}.json"
-        content = normalize_payload(payload)
-        if path.exists() and path.read_bytes() == content:
+    for (
+        dataset,
+        payload,
+        old,
+        json_path,
+        csv_path,
+        json_content,
+        csv_content,
+        json_changed,
+        csv_changed,
+    ) in prepared:
+        if not json_changed and not csv_changed:
             continue
-        old = read_existing(path, dataset)
-        atomic_write(path, content)
+        if json_changed:
+            atomic_write(json_path, json_content)
+        if csv_changed:
+            atomic_write(csv_path, csv_content)
         changes.append(
             Change(
                 dataset=dataset,
-                path=path,
+                path=json_path,
                 sail_numbers=changed_sail_numbers(old, payload),
             )
         )
@@ -260,6 +372,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--family", type=int, default=1)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument(
+        "--max-deletions",
+        type=int,
+        default=25,
+        help="abort without writing if more than this many certificate refs disappear",
+    )
     parser.add_argument("--summary-file", type=Path)
     parser.add_argument("--index-url", default=INDEX_URL)
     return parser.parse_args()
@@ -271,6 +389,7 @@ def main() -> int:
         data_dir=args.data_dir,
         family=args.family,
         workers=args.workers,
+        max_deletions=args.max_deletions,
         index_url=args.index_url,
     )
     message = commit_message(changes)
