@@ -39,9 +39,11 @@ datasets, and the workflow creates and pushes a commit only when the staged data
 diff is non-empty. Its commit subject and body identify affected sail numbers.
 
 Before writing any files, the updater compares certificate reference numbers
-across every dataset. It aborts the entire run if more than 25 certificates have
-disappeared, guarding against truncated or faulty upstream responses. The limit
-is configurable with `--max-deletions` and is explicit in the workflow.
+within each country/year dataset. It aborts the entire run if any dataset loses
+more than 10% of its previously archived certificates, guarding against
+truncated or faulty upstream responses while accounting for different fleet
+sizes. The limit is configurable with `--max-deletion-percent` and is explicit
+in the workflow.
 
 ## Reading history
 

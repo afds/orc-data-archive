@@ -8,6 +8,7 @@ import csv
 import html.parser
 import io
 import json
+import math
 import os
 import random
 import tempfile
@@ -220,12 +221,28 @@ def changed_sail_numbers(old: dict | None, new: dict) -> tuple[str, ...]:
     return tuple(sorted((label for label in labels if before.get(label) != after.get(label)), key=str.casefold))
 
 
+def certificate_refs(payload: dict | None) -> set[str]:
+    if payload is None:
+        return set()
+    return {
+        ref
+        for boat in payload["rms"]
+        if (ref := str(boat.get("RefNo") or "").strip())
+    }
+
+
 def removed_certificate_refs(old: dict | None, new: dict) -> tuple[str, ...]:
-    if old is None:
-        return ()
-    before = {str(boat.get("RefNo") or "").strip() for boat in old["rms"]}
-    after = {str(boat.get("RefNo") or "").strip() for boat in new["rms"]}
-    return tuple(sorted((before - after) - {""}, key=str.casefold))
+    before = certificate_refs(old)
+    after = certificate_refs(new)
+    return tuple(sorted(before - after, key=str.casefold))
+
+
+def deletion_limit_exceeded(
+    removed_count: int, previous_count: int, max_percent: float
+) -> bool:
+    return bool(
+        previous_count and removed_count * 100 > previous_count * max_percent
+    )
 
 
 def read_existing(path: Path, dataset: Dataset) -> dict | None:
@@ -253,10 +270,13 @@ def update_archive(
     data_dir: Path,
     family: int = 1,
     workers: int = 4,
-    max_deletions: int = 25,
+    max_deletion_percent: float = 10.0,
     fetcher: Callable[[str], bytes] = fetch,
     index_url: str = INDEX_URL,
 ) -> list[Change]:
+    if not math.isfinite(max_deletion_percent) or not 0 <= max_deletion_percent <= 100:
+        raise ValueError("max_deletion_percent must be between 0 and 100")
+
     index_html = fetcher(index_url).decode("utf-8-sig")
     datasets = discover_datasets(index_html, index_url, family)
     if not datasets:
@@ -277,7 +297,7 @@ def update_archive(
                 downloaded_csv[dataset] = parse_csv_payload(future.result(), dataset)
 
     prepared = []
-    removed_by_dataset: list[tuple[Dataset, tuple[str, ...]]] = []
+    removal_violations: list[tuple[Dataset, tuple[str, ...], int]] = []
     for dataset in datasets:
         payload = downloaded_json[dataset]
         json_path = data_dir / str(dataset.year) / f"{dataset.country}.json"
@@ -288,8 +308,11 @@ def update_archive(
         csv_changed = not csv_path.exists() or csv_path.read_bytes() != csv_content
         old = read_existing(json_path, dataset)
         removed = removed_certificate_refs(old, payload)
-        if removed:
-            removed_by_dataset.append((dataset, removed))
+        previous_count = len(certificate_refs(old))
+        if deletion_limit_exceeded(
+            len(removed), previous_count, max_deletion_percent
+        ):
+            removal_violations.append((dataset, removed, previous_count))
         prepared.append(
             (
                 dataset,
@@ -304,16 +327,16 @@ def update_archive(
             )
         )
 
-    deletion_count = sum(len(refs) for _, refs in removed_by_dataset)
-    if deletion_count > max_deletions:
+    if removal_violations:
         details = "; ".join(
-            f"{dataset.year}/{dataset.country}: {', '.join(refs[:5])}"
+            f"{dataset.year}/{dataset.country}: {len(refs)} of {previous_count} "
+            f"({len(refs) / previous_count:.1%}) removed: {', '.join(refs[:5])}"
             + (f" (+{len(refs) - 5} more)" if len(refs) > 5 else "")
-            for dataset, refs in removed_by_dataset
+            for dataset, refs, previous_count in removal_violations
         )
         raise RuntimeError(
-            f"refusing to archive {deletion_count} certificate removals "
-            f"(limit: {max_deletions}); {details}"
+            "refusing to archive certificate removals above "
+            f"{max_deletion_percent:g}% of a dataset; {details}"
         )
 
     changes: list[Change] = []
@@ -373,10 +396,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--family", type=int, default=1)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument(
-        "--max-deletions",
-        type=int,
-        default=25,
-        help="abort without writing if more than this many certificate refs disappear",
+        "--max-deletion-percent",
+        type=float,
+        default=10.0,
+        help="abort without writing if a dataset loses more than this percentage of refs",
     )
     parser.add_argument("--summary-file", type=Path)
     parser.add_argument("--index-url", default=INDEX_URL)
@@ -389,7 +412,7 @@ def main() -> int:
         data_dir=args.data_dir,
         family=args.family,
         workers=args.workers,
-        max_deletions=args.max_deletions,
+        max_deletion_percent=args.max_deletion_percent,
         index_url=args.index_url,
     )
     message = commit_message(changes)

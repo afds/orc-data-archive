@@ -13,6 +13,7 @@ from update_archive import (  # noqa: E402
     changed_sail_numbers,
     commit_message,
     csv_url,
+    deletion_limit_exceeded,
     discover_datasets,
     normalize_csv_payload,
     normalize_payload,
@@ -70,6 +71,10 @@ class UpdateArchiveTests(unittest.TestCase):
         old = {"rms": [{"RefNo": "A"}, {"RefNo": "B"}, {"RefNo": "C"}]}
         new = {"rms": [{"RefNo": "A"}, {"RefNo": "C", "GPH": 599}]}
         self.assertEqual(("B",), removed_certificate_refs(old, new))
+
+    def test_deletion_percentage_allows_boundary_and_rejects_above_it(self):
+        self.assertFalse(deletion_limit_exceeded(1, 10, 10))
+        self.assertTrue(deletion_limit_exceeded(2, 10, 10))
 
     def test_update_writes_year_country_and_keeps_unadvertised_files(self):
         index = b"""
@@ -152,10 +157,10 @@ class UpdateArchiveTests(unittest.TestCase):
             responses[dataset_url] = b'{"rms":[{"RefNo":"A"}]}'
             responses[csv_url(dataset_url)] = b'NAT,SAILNUMB,NAME,FILE_ID,CERTN.\nEST,A,A,A,A\n'
 
-            with self.assertRaisesRegex(RuntimeError, "2 certificate removals"):
+            with self.assertRaisesRegex(RuntimeError, r"2 of 3 \(66.7%\) removed"):
                 update_archive(
                     data_dir,
-                    max_deletions=1,
+                    max_deletion_percent=50,
                     fetcher=responses.__getitem__,
                 )
 

@@ -25,7 +25,7 @@ jobs:
       - name: Download and normalize ORC data
         run: >-
           python scripts/update_archive.py
-          --max-deletions 25
+          --max-deletion-percent 10
           --summary-file "$RUNNER_TEMP/commit-message.txt"
 
       - name: Commit changes
