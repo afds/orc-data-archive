@@ -1,0 +1,38 @@
+name: Archive ORC data
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: archive-orc-data
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Download and normalize ORC data
+        run: python scripts/update_archive.py --summary-file "$RUNNER_TEMP/commit-message.txt"
+
+      - name: Commit changes
+        run: |
+          git add data
+          if git diff --cached --quiet; then
+            echo "ORC data is unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit --file "$RUNNER_TEMP/commit-message.txt"
+          git push
