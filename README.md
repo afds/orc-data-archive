@@ -1,6 +1,6 @@
 # ORC data archive
 
-This repository takes weekly snapshots of the public Offshore Racing Congress
+This repository takes daily snapshots of the public Offshore Racing Congress
 (ORC) rating-data JSON feeds. Git history preserves each observed revision of
 the active certificate data.
 
@@ -32,9 +32,10 @@ python scripts/update_archive.py --summary-file /tmp/orc-commit-message.txt
 cat /tmp/orc-commit-message.txt
 ```
 
-The [weekly workflow](.github/workflows/archive.yml) runs every Monday and can
-also be started manually. It commits directly only when normalized data has
-changed. Its commit subject and body identify affected sail numbers.
+The [daily workflow](.github/workflows/archive.yml) runs at 04:17 UTC and can
+also be started manually. The updater does not rewrite byte-identical normalized
+datasets, and the workflow creates and pushes a commit only when the staged data
+diff is non-empty. Its commit subject and body identify affected sail numbers.
 
 ## Reading history
 
@@ -44,7 +45,7 @@ git log -p -- data/2026/EST.json
 git show <commit>:data/2026/EST.json
 ```
 
-The archive is a weekly sampling of ORC's active-data feed, not an ORC-issued
+The archive is a daily sampling of ORC's active-data feed, not an ORC-issued
 certificate ledger. If a boat receives multiple replacement certificates
 between two workflow runs, intermediate revisions may not be observed.
 

@@ -77,6 +77,31 @@ class UpdateArchiveTests(unittest.TestCase):
             self.assertTrue((data_dir / "2026" / "EST.json").exists())
             self.assertTrue(retained.exists())
 
+    def test_update_does_not_rewrite_unchanged_dataset(self):
+        index = b"""
+        <a href="/public/WPub.dll?action=DownRMS&amp;CountryId=EST&amp;ext=json&amp;Family=1&amp;VPPYear=2026">JSON</a>
+        """
+        dataset_url = (
+            "https://data.orc.org/public/WPub.dll?action=DownRMS&"
+            "CountryId=EST&ext=json&Family=1&VPPYear=2026"
+        )
+        responses = {
+            INDEX_URL: index,
+            dataset_url: b'{"rms":[{"RefNo":"SAME","SailNo":"EST 467"}]}',
+        }
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory) / "data"
+            first_changes = update_archive(data_dir, fetcher=responses.__getitem__)
+            path = data_dir / "2026" / "EST.json"
+            first_stat = path.stat()
+
+            second_changes = update_archive(data_dir, fetcher=responses.__getitem__)
+
+            self.assertEqual(1, len(first_changes))
+            self.assertEqual([], second_changes)
+            self.assertEqual(first_stat.st_ino, path.stat().st_ino)
+
     def test_commit_message_names_changed_sails(self):
         change = Change(
             dataset=Dataset(2026, "EST", 1, "https://example.test"),
