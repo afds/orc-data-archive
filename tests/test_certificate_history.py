@@ -129,6 +129,29 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertEqual("active", row["status"])
             self.assertEqual("", row["removed_on"])
 
+    def test_generated_pages_link_to_official_orc_certificate_services(self):
+        with tempfile.TemporaryDirectory() as directory:
+            site_dir = Path(directory) / "docs"
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [{"RefNo": "A", "YachtName": "Adele"}])],
+                    "2026-08-22",
+                )
+            )
+
+            for path in (
+                site_dir / "index.html",
+                site_dir / "certificates" / "2026" / "index.html",
+            ):
+                page = path.read_text()
+                self.assertIn("Unofficial archive", page)
+                self.assertIn("https://orc.org/sailors/sailor-services", page)
+                self.assertIn(
+                    "https://orc.org/sailors/active-certificates-database",
+                    page,
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

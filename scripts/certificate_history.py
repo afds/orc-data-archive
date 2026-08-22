@@ -29,6 +29,8 @@ HISTORY_FIELDS = (
     "certificate_url",
 )
 CERTIFICATE_URL = "https://data.orc.org/public/WPub.dll/CC/{ref_no}.pdf"
+SAILOR_SERVICES_URL = "https://orc.org/sailors/sailor-services"
+ACTIVE_CERTIFICATES_URL = "https://orc.org/sailors/active-certificates-database"
 
 
 def certificate_url(ref_no: str) -> str:
@@ -149,6 +151,16 @@ def _year_navigation(years: list[int], current: int) -> str:
     return "".join(links)
 
 
+def _official_sources_notice() -> str:
+    return f"""<aside class="official-notice" aria-label="Official ORC certificate sources">
+    <strong>Unofficial archive</strong>
+    <p>This independent site is not an official ORC service. For official certificates, use
+      <a href="{SAILOR_SERVICES_URL}">ORC Sailor Services</a> or the
+      <a href="{ACTIVE_CERTIFICATES_URL}">ORC Active Certificates Database</a>.
+    </p>
+  </aside>"""
+
+
 def _render_year_page(
     year: int,
     years: list[int],
@@ -172,6 +184,7 @@ def _render_year_page(
       <div><dt>Total</dt><dd id="total-count">{len(records):,}</dd></div>
     </dl>
   </section>
+  {_official_sources_notice()}
   <section class="browser" aria-labelledby="browser-heading"
            data-history-url="certificates.csv">
     <div class="browser-heading">
@@ -244,6 +257,7 @@ def _render_index(
     <h1>Find an ORC certificate</h1>
     <p>Browse yachts by VPP year and open the certificate retained by its ORC reference.</p>
   </section>
+  {_official_sources_notice()}
   <section class="years" aria-labelledby="years-heading">
     <div class="section-title"><h2 id="years-heading">VPP years</h2><p>Updated daily from ORC's public active-certificate feed.</p></div>
     <div class="year-list">{''.join(year_links)}</div>
