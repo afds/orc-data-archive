@@ -1,12 +1,13 @@
 # ORC data archive
 
 This repository takes daily snapshots of the public Offshore Racing Congress
-(ORC) rating-data JSON and CSV feeds. Git history preserves each observed revision of
-the active certificate data.
+(ORC) rating-data JSON and CSV feeds. Git history preserves each observed
+revision of the active certificate data.
 
 The updater discovers available regular ORC datasets (`Family=1`) from the
 [ORC RMS index](https://data.orc.org/public/WPub.dll/RMS?dox=1), downloads each
-advertised JSON and CSV feeds, validates them, and writes deterministic snapshots to:
+advertised JSON and CSV feeds, validates them, and writes deterministic
+snapshots to:
 
 ```text
 data/<VPP year>/<rating-office country>.{json,csv}
@@ -58,6 +59,9 @@ certificate ledger. If a boat receives multiple replacement certificates
 between two workflow runs, intermediate revisions may not be observed.
 
 ## Data format
+
+See [ORC rating-data fields](docs/data-fields.md) for the JSON structure, CSV
+column mappings, units, polar arrays, and national scoring options.
 
 The original payloads are preserved semantically, including every boat field.
 For stable, reviewable diffs, JSON boats and object keys are sorted and each
