@@ -90,11 +90,10 @@
     row.append(issuedCell);
 
     const statusCell = document.createElement("td");
-    const label = record.status === "active" ? "Active" : "Archived";
+    let label = "Archived";
+    if (record.status === "active") label = "Active";
+    else if (record.removed_on) label = `Archived on ${record.removed_on}`;
     statusCell.append(element("span", label, `status ${record.status}`));
-    if (record.removed_on) {
-      statusCell.append(element("small", `Observed ${record.removed_on}`, "removed-date"));
-    }
     row.append(statusCell);
 
     const certificate = document.createElement("td");
