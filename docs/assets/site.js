@@ -11,8 +11,16 @@
   if (!browser || !search || !status || !country || !body || !count || !empty || !loadMore) return;
 
   const pageSize = 200;
+  const initialParams = new URLSearchParams(window.location.search);
+  const requestedCountry = (initialParams.get("country") || "").toUpperCase();
   let records = [];
   let visibleLimit = pageSize;
+
+  search.value = initialParams.get("search") || "";
+  const requestedStatus = initialParams.get("status") === "removed"
+    ? "archived"
+    : initialParams.get("status");
+  if (["active", "archived"].includes(requestedStatus)) status.value = requestedStatus;
 
   const parseCsv = (text) => {
     const table = [];
@@ -82,7 +90,7 @@
     row.append(issuedCell);
 
     const statusCell = document.createElement("td");
-    const label = record.status === "active" ? "Active" : "Removed";
+    const label = record.status === "active" ? "Active" : "Archived";
     statusCell.append(element("span", label, `status ${record.status}`));
     if (record.removed_on) {
       statusCell.append(element("small", `Observed ${record.removed_on}`, "removed-date"));
@@ -124,8 +132,22 @@
     loadMore.hidden = shown === matches.length;
   };
 
+  const syncUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("search");
+    url.searchParams.delete("country");
+    url.searchParams.delete("status");
+
+    const query = search.value.trim();
+    if (query) url.searchParams.set("search", query);
+    if (country.value !== "all") url.searchParams.set("country", country.value);
+    if (status.value !== "all") url.searchParams.set("status", status.value);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  };
+
   const resetAndRender = () => {
     visibleLimit = pageSize;
+    syncUrl();
     render();
   };
 
@@ -143,7 +165,9 @@
       return response.text();
     })
     .then((text) => {
-      records = parseCsv(text).sort((left, right) => (
+      records = parseCsv(text).map((record) => (
+        record.status === "removed" ? {...record, status: "archived"} : record
+      )).sort((left, right) => (
         right.issue_date.localeCompare(left.issue_date)
         || left.country.localeCompare(right.country)
         || left.yacht_name.localeCompare(right.yacht_name)
@@ -157,6 +181,8 @@
         option.value = countryCode;
         country.append(option);
       }
+      if (countries.includes(requestedCountry)) country.value = requestedCountry;
+      syncUrl();
       render();
     })
     .catch((error) => {

@@ -90,7 +90,12 @@ def _load_history(path: Path, year: int) -> dict[str, dict[str, str]]:
                 raise ValueError(f"{path} contains duplicate ref_no {ref_no}")
             if row["vpp_year"] != str(year):
                 raise ValueError(f"{path} contains VPP year {row['vpp_year']}")
-            records[ref_no] = {field: row.get(field, "") for field in HISTORY_FIELDS}
+            record = {field: row.get(field, "") for field in HISTORY_FIELDS}
+            if record["status"] == "removed":
+                record["status"] = "archived"
+            if record["status"] not in {"active", "archived"}:
+                raise ValueError(f"{path} contains invalid status {record['status']}")
+            records[ref_no] = record
     return records
 
 
@@ -150,7 +155,7 @@ def _render_year_page(
     records: dict[str, dict[str, str]],
 ) -> bytes:
     active = sum(record["status"] == "active" for record in records.values())
-    removed = len(records) - active
+    archived = len(records) - active
     body = f"""<header class="site-header">
   <a class="brand" href="../../">ORC certificate archive</a>
   <nav class="year-nav" aria-label="VPP years">{_year_navigation(years, year)}</nav>
@@ -163,7 +168,7 @@ def _render_year_page(
     </div>
     <dl class="summary">
       <div><dt>Active</dt><dd id="active-count">{active:,}</dd></div>
-      <div><dt>Archived</dt><dd id="removed-count">{removed:,}</dd></div>
+      <div><dt>Archived</dt><dd id="archived-count">{archived:,}</dd></div>
       <div><dt>Total</dt><dd id="total-count">{len(records):,}</dd></div>
     </dl>
   </section>
@@ -182,7 +187,7 @@ def _render_year_page(
           <select id="status-filter">
             <option value="all">All certificates</option>
             <option value="active">Active</option>
-            <option value="removed">Removed</option>
+            <option value="archived">Archived</option>
           </select>
         </label>
         <label>Country
@@ -304,7 +309,7 @@ def build_history_site(
                 and ref_no not in active
                 and record["status"] == "active"
             ):
-                record["status"] = "removed"
+                record["status"] = "archived"
                 record["removed_on"] = observed_on
 
     years = sorted(histories)

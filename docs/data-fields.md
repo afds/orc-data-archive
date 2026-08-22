@@ -101,7 +101,7 @@ and certificate links remain in the history.
 | `certificate_type`, `family` | Values copied from JSON `C_Type` and `Family`. |
 | `issue_date` | ORC-provided issue timestamp. |
 | `first_seen_on` | First successful daily archive date on which this reference appeared. |
-| `status` | `active` while present in the feed, otherwise `removed`. |
+| `status` | `active` while present in the feed, otherwise `archived`. |
 | `removed_on` | First successful archive date on which the reference was absent. |
 | `certificate_url` | Stable ORC certificate-renderer URL derived from `ref_no`. |
 

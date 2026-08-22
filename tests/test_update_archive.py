@@ -153,7 +153,7 @@ class UpdateArchiveTests(unittest.TestCase):
                 rows = {row["ref_no"]: row for row in csv.DictReader(source)}
 
             self.assertEqual({"OLD", "NEW"}, set(rows))
-            self.assertEqual("removed", rows["OLD"]["status"])
+            self.assertEqual("archived", rows["OLD"]["status"])
             self.assertEqual("2026-08-21", rows["OLD"]["first_seen_on"])
             self.assertEqual("active", rows["NEW"]["status"])
 

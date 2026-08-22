@@ -60,7 +60,7 @@ class CertificateHistoryTests(unittest.TestCase):
                 rows = {row["ref_no"]: row for row in csv.DictReader(source)}
 
             self.assertEqual("active", rows["A"]["status"])
-            self.assertEqual("removed", rows["B"]["status"])
+            self.assertEqual("archived", rows["B"]["status"])
             self.assertEqual("2026-08-22", rows["B"]["removed_on"])
             self.assertEqual("2026-05-01T10:00:00Z", rows["B"]["issue_date"])
             self.assertTrue(rows["B"]["certificate_url"].endswith("/B.pdf"))
@@ -98,7 +98,7 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertEqual(4, len(rows))
             self.assertEqual({"REF-1", "REF-2", "REF-3", "REF-4"}, {row["ref_no"] for row in rows})
             self.assertEqual(1, sum(row["status"] == "active" for row in rows))
-            self.assertEqual(3, sum(row["status"] == "removed" for row in rows))
+            self.assertEqual(3, sum(row["status"] == "archived" for row in rows))
 
             page = (site_dir / "certificates" / "2026" / "index.html").read_text()
             self.assertIn('data-history-url="certificates.csv"', page)

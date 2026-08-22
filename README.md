@@ -29,6 +29,13 @@ certificate for the same yacht remains a separate searchable row and link.
 The updater also backfills certificate records from committed JSON revisions,
 including snapshots created before the browser was introduced.
 
+Browser filters are shareable. Search, country, and non-default status values
+are preserved in the URL, for example:
+
+```text
+https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LAT&status=active
+```
+
 ## Updating
 
 Run the updater with Python 3.11 or newer; it has no third-party dependencies:
