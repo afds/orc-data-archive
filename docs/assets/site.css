@@ -136,7 +136,7 @@ input { min-width: min(360px, 70vw); }
 input:focus, select:focus { border-color: var(--accent); outline: 3px solid rgb(8 127 140 / 16%); }
 
 .table-wrap { border: 1px solid var(--line); overflow-x: auto; }
-table { border-collapse: collapse; min-width: 900px; width: 100%; }
+table { border-collapse: collapse; min-width: 1020px; width: 100%; }
 th { background: var(--surface); color: var(--muted); font-size: 11px; letter-spacing: .07em; position: sticky; text-align: left; text-transform: uppercase; top: 0; }
 th, td { border-bottom: 1px solid var(--line); padding: 14px 16px; vertical-align: top; }
 td { font-size: 14px; }

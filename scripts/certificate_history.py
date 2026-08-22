@@ -195,11 +195,18 @@ def _render_year_page(
             <option value="all">All countries</option>
           </select>
         </label>
+        <label>Certificate type
+          <select id="type-filter">
+            <option value="all">All types</option>
+            <option value="INTL">International</option>
+            <option value="CLUB">Club</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Yacht</th><th>Sail no.</th><th>Country</th><th>Issued</th><th>Status</th><th>ORC certificate</th></tr></thead>
+        <thead><tr><th>Yacht</th><th>Sail no.</th><th>Country</th><th>Type</th><th>Issued</th><th>Status</th><th>ORC certificate</th></tr></thead>
         <tbody></tbody>
       </table>
       <p class="empty-state" id="empty-state">Loading certificate history…</p>

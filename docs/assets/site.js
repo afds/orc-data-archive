@@ -3,16 +3,18 @@
   const search = document.querySelector("#search");
   const status = document.querySelector("#status-filter");
   const country = document.querySelector("#country-filter");
+  const certificateType = document.querySelector("#type-filter");
   const body = document.querySelector("tbody");
   const count = document.querySelector("#visible-count");
   const empty = document.querySelector("#empty-state");
   const loadMore = document.querySelector("#load-more");
 
-  if (!browser || !search || !status || !country || !body || !count || !empty || !loadMore) return;
+  if (!browser || !search || !status || !country || !certificateType || !body || !count || !empty || !loadMore) return;
 
   const pageSize = 200;
   const initialParams = new URLSearchParams(window.location.search);
   const requestedCountry = (initialParams.get("country") || "").toUpperCase();
+  const requestedType = (initialParams.get("type") || "").toLowerCase();
   let records = [];
   let visibleLimit = pageSize;
 
@@ -21,6 +23,8 @@
     ? "archived"
     : initialParams.get("status");
   if (["active", "archived"].includes(requestedStatus)) status.value = requestedStatus;
+  if (requestedType === "club") certificateType.value = "CLUB";
+  if (["international", "intl"].includes(requestedType)) certificateType.value = "INTL";
 
   const parseCsv = (text) => {
     const table = [];
@@ -73,6 +77,12 @@
     return node;
   };
 
+  const certificateTypeLabel = (value) => {
+    if (value === "INTL") return "International";
+    if (value === "CLUB") return "Club";
+    return value || "—";
+  };
+
   const renderRow = (record) => {
     const row = document.createElement("tr");
 
@@ -82,6 +92,7 @@
     row.append(yacht);
     row.append(element("td", record.sail_no || "—"));
     row.append(element("td", record.country));
+    row.append(element("td", certificateTypeLabel(record.certificate_type)));
 
     const issuedCell = document.createElement("td");
     const issued = element("time", record.issue_date.slice(0, 10) || "—");
@@ -116,11 +127,13 @@
         record.sail_no,
         record.yacht_name,
         record.class,
+        certificateTypeLabel(record.certificate_type),
       ].join(" ").toLocaleLowerCase();
       const matchesText = !query || searchable.includes(query);
       const matchesStatus = status.value === "all" || record.status === status.value;
       const matchesCountry = country.value === "all" || record.country === country.value;
-      return matchesText && matchesStatus && matchesCountry;
+      const matchesType = certificateType.value === "all" || record.certificate_type === certificateType.value;
+      return matchesText && matchesStatus && matchesCountry && matchesType;
     });
 
     body.replaceChildren(...matches.slice(0, visibleLimit).map(renderRow));
@@ -136,11 +149,14 @@
     url.searchParams.delete("search");
     url.searchParams.delete("country");
     url.searchParams.delete("status");
+    url.searchParams.delete("type");
 
     const query = search.value.trim();
     if (query) url.searchParams.set("search", query);
     if (country.value !== "all") url.searchParams.set("country", country.value);
     if (status.value !== "all") url.searchParams.set("status", status.value);
+    if (certificateType.value === "CLUB") url.searchParams.set("type", "club");
+    if (certificateType.value === "INTL") url.searchParams.set("type", "international");
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
   };
 
@@ -153,6 +169,7 @@
   search.addEventListener("input", resetAndRender);
   status.addEventListener("change", resetAndRender);
   country.addEventListener("change", resetAndRender);
+  certificateType.addEventListener("change", resetAndRender);
   loadMore.addEventListener("click", () => {
     visibleLimit += pageSize;
     render();

@@ -102,6 +102,8 @@ class CertificateHistoryTests(unittest.TestCase):
 
             page = (site_dir / "certificates" / "2026" / "index.html").read_text()
             self.assertIn('data-history-url="certificates.csv"', page)
+            self.assertIn('id="type-filter"', page)
+            self.assertIn('<th>Type</th>', page)
 
     def test_unadvertised_country_is_not_marked_removed(self):
         with tempfile.TemporaryDirectory() as directory:

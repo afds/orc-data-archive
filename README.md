@@ -20,20 +20,21 @@ place, so all of their observed versions remain available through Git history.
 Files from years no longer advertised by ORC are retained.
 
 The generated [certificate browser](https://afds.github.io/orc-data-archive/)
-groups yachts by VPP year, supports country and status filters, and links each
-ORC reference to its public certificate page. Its canonical history is stored in
+groups yachts by VPP year, supports country, status, and Club/International
+certificate-type filters, and links each ORC reference to its public certificate
+page. Its canonical history is stored in
 `docs/certificates/<year>/certificates.csv`; certificates remain in that file
 after disappearing from the active feed and receive an observed removal date.
 History is keyed by immutable ORC reference, so every observed replacement
-certificate for the same yacht remains a separate searchable row and link.
-The updater also backfills certificate records from committed JSON revisions,
+certificate for the same yacht remains a separate searchable row and link. The
+updater also backfills certificate records from committed JSON revisions,
 including snapshots created before the browser was introduced.
 
 Browser filters are shareable. Search, country, and non-default status values
 are preserved in the URL, for example:
 
 ```text
-https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LAT&status=active
+https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LAT&status=active&type=club
 ```
 
 ## Updating
@@ -80,6 +81,10 @@ revision present during at least one successful daily run is retained.
 
 See [ORC rating-data fields](docs/data-fields.md) for the JSON structure, CSV
 column mappings, units, polar arrays, and national scoring options.
+
+See [Performance guide feasibility](docs/performance-guide.md) for the proposed
+future non-sail-specific polar view, the values that can be derived from the
+archive, and why the public feed cannot reproduce ORC's per-sail Speed Guide.
 
 The original payloads are preserved semantically, including every boat field.
 For stable, reviewable diffs, JSON boats and object keys are sorted and each
