@@ -19,6 +19,14 @@ For example, Estonian certificates using the 2026 VPP are stored in
 place, so all of their observed versions remain available through Git history.
 Files from years no longer advertised by ORC are retained.
 
+The generated [certificate browser](https://afds.github.io/orc-data-archive/)
+groups yachts by VPP year and links each ORC reference to its public certificate
+page. Its canonical history is stored in
+`docs/certificates/<year>/certificates.csv`; certificates remain in that file
+after disappearing from the active feed and receive an observed removal date.
+History is keyed by immutable ORC reference, so every observed replacement
+certificate for the same yacht remains a separate searchable row and link.
+
 ## Updating
 
 Run the updater with Python 3.11 or newer; it has no third-party dependencies:
@@ -56,7 +64,8 @@ git show <commit>:data/2026/EST.json
 
 The archive is a daily sampling of ORC's active-data feed, not an ORC-issued
 certificate ledger. If a boat receives multiple replacement certificates
-between two workflow runs, intermediate revisions may not be observed.
+between two workflow runs, intermediate revisions may not be observed. Every
+revision present during at least one successful daily run is retained.
 
 ## Data format
 

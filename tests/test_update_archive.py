@@ -102,6 +102,12 @@ class UpdateArchiveTests(unittest.TestCase):
             self.assertEqual(("EST 467",), changes[0].sail_numbers)
             self.assertTrue((data_dir / "2026" / "EST.json").exists())
             self.assertTrue((data_dir / "2026" / "EST.csv").exists())
+            history = data_dir.parent / "docs" / "certificates" / "2026"
+            self.assertTrue((history / "certificates.csv").exists())
+            self.assertIn(
+                'data-history-url="certificates.csv"',
+                (history / "index.html").read_text(),
+            )
             self.assertTrue(retained.exists())
 
     def test_update_does_not_rewrite_unchanged_dataset(self):
@@ -125,6 +131,8 @@ class UpdateArchiveTests(unittest.TestCase):
             csv_path = data_dir / "2026" / "EST.csv"
             first_json_stat = json_path.stat()
             first_csv_stat = csv_path.stat()
+            history_path = data_dir.parent / "docs" / "certificates" / "2026" / "certificates.csv"
+            first_history_stat = history_path.stat()
 
             second_changes = update_archive(data_dir, fetcher=responses.__getitem__)
 
@@ -132,6 +140,7 @@ class UpdateArchiveTests(unittest.TestCase):
             self.assertEqual([], second_changes)
             self.assertEqual(first_json_stat.st_ino, json_path.stat().st_ino)
             self.assertEqual(first_csv_stat.st_ino, csv_path.stat().st_ino)
+            self.assertEqual(first_history_stat.st_ino, history_path.stat().st_ino)
 
     def test_update_aborts_before_writing_when_deletion_limit_is_exceeded(self):
         index = b"""
@@ -154,6 +163,8 @@ class UpdateArchiveTests(unittest.TestCase):
             csv_path = data_dir / "2026" / "EST.csv"
             original_json = json_path.read_bytes()
             original_csv = csv_path.read_bytes()
+            history_path = data_dir.parent / "docs" / "certificates" / "2026" / "certificates.csv"
+            original_history = history_path.read_bytes()
             responses[dataset_url] = b'{"rms":[{"RefNo":"A"}]}'
             responses[csv_url(dataset_url)] = b'NAT,SAILNUMB,NAME,FILE_ID,CERTN.\nEST,A,A,A,A\n'
 
@@ -166,6 +177,7 @@ class UpdateArchiveTests(unittest.TestCase):
 
             self.assertEqual(original_json, json_path.read_bytes())
             self.assertEqual(original_csv, csv_path.read_bytes())
+            self.assertEqual(original_history, history_path.read_bytes())
 
     def test_commit_message_names_changed_sails(self):
         change = Change(

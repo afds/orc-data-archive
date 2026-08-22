@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="History of public ORC rating certificates">
+  <title>2025 ORC certificates</title>
+  <link rel="stylesheet" href="../../assets/site.css">
+  <script src="../../assets/site.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="brand" href="../../">ORC certificate archive</a>
+  <nav class="year-nav" aria-label="VPP years"><a href="../2026/">2026</a><a href="../2025/" aria-current="page">2025</a></nav>
+</header>
+<main>
+  <section class="year-intro">
+    <div>
+      <h1>2025 certificates</h1>
+      <p>Certificates observed in the public ORC rating feed, retained after removal.</p>
+    </div>
+    <dl class="summary">
+      <div><dt>Active</dt><dd id="active-count">34</dd></div>
+      <div><dt>Archived</dt><dd id="removed-count">0</dd></div>
+      <div><dt>Total</dt><dd id="total-count">34</dd></div>
+    </dl>
+  </section>
+  <section class="browser" aria-labelledby="browser-heading"
+           data-history-url="certificates.csv">
+    <div class="browser-heading">
+      <div>
+        <h2 id="browser-heading">Yachts</h2>
+        <p><span id="visible-count">Loading…</span></p>
+      </div>
+      <div class="filters">
+        <label>Search
+          <input id="search" type="search" placeholder="Yacht, sail number, country or ORC ref">
+        </label>
+        <label>Status
+          <select id="status-filter">
+            <option value="all">All certificates</option>
+            <option value="active">Active</option>
+            <option value="removed">Removed</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Yacht</th><th>Sail no.</th><th>Country</th><th>Issued</th><th>Status</th><th>ORC certificate</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="empty-state" id="empty-state">Loading certificate history…</p>
+    </div>
+    <button class="load-more" id="load-more" type="button" hidden>Show more</button>
+  </section>
+  <footer><a href="certificates.csv">Download 2025 certificate history CSV</a>
+    <span>Independent archive; certificate pages are served by ORC.</span></footer>
+</main>
+</body>
+</html>

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import datetime
 import html.parser
 import io
 import json
@@ -21,6 +22,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
+
+from certificate_history import build_history_site
 
 
 INDEX_URL = "https://data.orc.org/public/WPub.dll/RMS?dox=1"
@@ -271,11 +274,18 @@ def update_archive(
     family: int = 1,
     workers: int = 4,
     max_deletion_percent: float = 10.0,
+    site_dir: Path | None = None,
+    observed_on: str | None = None,
     fetcher: Callable[[str], bytes] = fetch,
     index_url: str = INDEX_URL,
 ) -> list[Change]:
     if not math.isfinite(max_deletion_percent) or not 0 <= max_deletion_percent <= 100:
         raise ValueError("max_deletion_percent must be between 0 and 100")
+    if site_dir is None:
+        site_dir = data_dir.parent / "docs"
+    if observed_on is None:
+        observed_on = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+    datetime.date.fromisoformat(observed_on)
 
     index_html = fetcher(index_url).decode("utf-8-sig")
     datasets = discover_datasets(index_html, index_url, family)
@@ -339,6 +349,15 @@ def update_archive(
             f"{max_deletion_percent:g}% of a dataset; {details}"
         )
 
+    site_files = build_history_site(
+        site_dir,
+        (
+            (dataset.year, dataset.country, downloaded_json[dataset]["rms"])
+            for dataset in datasets
+        ),
+        observed_on,
+    )
+
     changes: list[Change] = []
     for (
         dataset,
@@ -364,6 +383,9 @@ def update_archive(
                 sail_numbers=changed_sail_numbers(old, payload),
             )
         )
+    for path, content in site_files.items():
+        if not path.exists() or path.read_bytes() != content:
+            atomic_write(path, content)
     return changes
 
 
@@ -402,6 +424,11 @@ def parse_args() -> argparse.Namespace:
         help="abort without writing if a dataset loses more than this percentage of refs",
     )
     parser.add_argument("--summary-file", type=Path)
+    parser.add_argument("--site-dir", type=Path, default=Path("docs"))
+    parser.add_argument(
+        "--observed-on",
+        help="UTC observation date (YYYY-MM-DD); defaults to today",
+    )
     parser.add_argument("--index-url", default=INDEX_URL)
     return parser.parse_args()
 
@@ -413,6 +440,8 @@ def main() -> int:
         family=args.family,
         workers=args.workers,
         max_deletion_percent=args.max_deletion_percent,
+        site_dir=args.site_dir,
+        observed_on=args.observed_on,
         index_url=args.index_url,
     )
     message = commit_message(changes)

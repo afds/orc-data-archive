@@ -83,6 +83,34 @@ rows, `C_Type` contains values such as `ORC`, while `Family` contains `INTL` or
 `CLUB`. Use the values rather than inferring semantics from those legacy header
 names.
 
+## Certificate-history schema
+
+The generated `docs/certificates/<VPP year>/certificates.csv` files form the
+canonical append-preserving index behind the GitHub Pages browser. One row
+represents one observed `RefNo`, not one yacht. If a yacht receives four
+certificates during a VPP year and each appears in a daily sample, all four rows
+and certificate links remain in the history.
+
+| Field | Meaning |
+| --- | --- |
+| `vpp_year` | VPP/rating year containing the observation. |
+| `country`, `nat_auth` | Feed country and rating authority. |
+| `ref_no` | Immutable ORC certificate reference and row identity. |
+| `cert_no`, `bin` | Rating-office certificate number and ORC boat/file identifier. |
+| `sail_no`, `yacht_name`, `class` | Searchable yacht identity and description as last observed for this certificate. |
+| `certificate_type`, `family` | Values copied from JSON `C_Type` and `Family`. |
+| `issue_date` | ORC-provided issue timestamp. |
+| `first_seen_on` | First successful daily archive date on which this reference appeared. |
+| `status` | `active` while present in the feed, otherwise `removed`. |
+| `removed_on` | First successful archive date on which the reference was absent. |
+| `certificate_url` | Stable ORC certificate-renderer URL derived from `ref_no`. |
+
+Removal status is updated only after the deletion guard accepts the full run.
+A country not advertised during a run is left unchanged rather than treating
+all of its certificates as removed. ORC may serve printable HTML at a URL whose
+path ends in `.pdf`; the archive stores the durable certificate link, not the
+rendered document itself.
+
 ### Hull and crew
 
 | JSON field | CSV field | Unit | Meaning |
