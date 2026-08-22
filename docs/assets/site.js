@@ -2,12 +2,13 @@
   const browser = document.querySelector(".browser[data-history-url]");
   const search = document.querySelector("#search");
   const status = document.querySelector("#status-filter");
+  const country = document.querySelector("#country-filter");
   const body = document.querySelector("tbody");
   const count = document.querySelector("#visible-count");
   const empty = document.querySelector("#empty-state");
   const loadMore = document.querySelector("#load-more");
 
-  if (!browser || !search || !status || !body || !count || !empty || !loadMore) return;
+  if (!browser || !search || !status || !country || !body || !count || !empty || !loadMore) return;
 
   const pageSize = 200;
   let records = [];
@@ -111,7 +112,8 @@
       ].join(" ").toLocaleLowerCase();
       const matchesText = !query || searchable.includes(query);
       const matchesStatus = status.value === "all" || record.status === status.value;
-      return matchesText && matchesStatus;
+      const matchesCountry = country.value === "all" || record.country === country.value;
+      return matchesText && matchesStatus && matchesCountry;
     });
 
     body.replaceChildren(...matches.slice(0, visibleLimit).map(renderRow));
@@ -129,6 +131,7 @@
 
   search.addEventListener("input", resetAndRender);
   status.addEventListener("change", resetAndRender);
+  country.addEventListener("change", resetAndRender);
   loadMore.addEventListener("click", () => {
     visibleLimit += pageSize;
     render();
@@ -146,6 +149,14 @@
         || left.yacht_name.localeCompare(right.yacht_name)
         || left.ref_no.localeCompare(right.ref_no)
       ));
+      const countries = [...new Set(records.map((record) => record.country))]
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right));
+      for (const countryCode of countries) {
+        const option = element("option", countryCode);
+        option.value = countryCode;
+        country.append(option);
+      }
       render();
     })
     .catch((error) => {

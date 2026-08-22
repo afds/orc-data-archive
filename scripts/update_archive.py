@@ -12,6 +12,7 @@ import json
 import math
 import os
 import random
+import subprocess
 import tempfile
 import time
 import urllib.error
@@ -28,6 +29,7 @@ from certificate_history import build_history_site
 
 INDEX_URL = "https://data.orc.org/public/WPub.dll/RMS?dox=1"
 USER_AGENT = "orc-data-archive/1.0 (+https://github.com/afds/orc-data-archive)"
+HistoryObservation = tuple[str, int, str, list[dict]]
 
 
 @dataclass(frozen=True, order=True)
@@ -269,6 +271,81 @@ def atomic_write(path: Path, content: bytes) -> None:
         raise
 
 
+def load_git_observations(repo_dir: Path) -> list[HistoryObservation]:
+    """Load certificate records added by committed archive revisions."""
+    probe = subprocess.run(
+        ["git", "-C", str(repo_dir), "rev-parse", "--show-toplevel"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if probe.returncode:
+        return []
+    repo_root = Path(probe.stdout.strip())
+    log = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(repo_root),
+            "log",
+            "--reverse",
+            "--format=##COMMIT##%H%x09%cI",
+            "--patch",
+            "--unified=0",
+            "--diff-filter=AM",
+            "--root",
+            "--no-ext-diff",
+            "--",
+            "data",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    grouped: dict[tuple[str, int, str], list[dict]] = {}
+    observed_on = ""
+    dataset_key: tuple[str, int, str] | None = None
+    for line in log.stdout.splitlines():
+        if line.startswith("##COMMIT##"):
+            _, committed_at = line[10:].split("\t", 1)
+            timestamp = datetime.datetime.fromisoformat(committed_at)
+            observed_on = (
+                timestamp.astimezone(datetime.timezone.utc).date().isoformat()
+            )
+            dataset_key = None
+            continue
+        if line.startswith("+++ b/"):
+            path = Path(line[6:])
+            if (
+                len(path.parts) != 3
+                or path.parts[0] != "data"
+                or path.suffix != ".json"
+            ):
+                dataset_key = None
+                continue
+            try:
+                year = int(path.parts[1])
+            except ValueError:
+                dataset_key = None
+                continue
+            dataset_key = (observed_on, year, path.stem.upper())
+            grouped.setdefault(dataset_key, [])
+            continue
+        if dataset_key is None or not line.startswith("+"):
+            continue
+        added = line[1:].strip().removesuffix(",")
+        if not (added.startswith("{") and added.endswith("}")):
+            continue
+        try:
+            boat = json.loads(added)
+        except json.JSONDecodeError as exc:
+            raise ValueError("Git history contains a malformed boat record") from exc
+        if isinstance(boat, dict) and boat.get("RefNo"):
+            grouped[dataset_key].append(boat)
+    return [(*key, boats) for key, boats in grouped.items() if boats]
+
+
 def update_archive(
     data_dir: Path,
     family: int = 1,
@@ -277,6 +354,7 @@ def update_archive(
     site_dir: Path | None = None,
     observed_on: str | None = None,
     fetcher: Callable[[str], bytes] = fetch,
+    history_loader: Callable[[Path], Iterable[HistoryObservation]] = load_git_observations,
     index_url: str = INDEX_URL,
 ) -> list[Change]:
     if not math.isfinite(max_deletion_percent) or not 0 <= max_deletion_percent <= 100:
@@ -356,6 +434,7 @@ def update_archive(
             for dataset in datasets
         ),
         observed_on,
+        historical_observations=history_loader(data_dir.parent),
     )
 
     changes: list[Change] = []

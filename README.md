@@ -20,12 +20,14 @@ place, so all of their observed versions remain available through Git history.
 Files from years no longer advertised by ORC are retained.
 
 The generated [certificate browser](https://afds.github.io/orc-data-archive/)
-groups yachts by VPP year and links each ORC reference to its public certificate
-page. Its canonical history is stored in
+groups yachts by VPP year, supports country and status filters, and links each
+ORC reference to its public certificate page. Its canonical history is stored in
 `docs/certificates/<year>/certificates.csv`; certificates remain in that file
 after disappearing from the active feed and receive an observed removal date.
 History is keyed by immutable ORC reference, so every observed replacement
 certificate for the same yacht remains a separate searchable row and link.
+The updater also backfills certificate records from committed JSON revisions,
+including snapshots created before the browser was introduced.
 
 ## Updating
 

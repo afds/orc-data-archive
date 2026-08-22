@@ -111,6 +111,12 @@ all of its certificates as removed. ORC may serve printable HTML at a URL whose
 path ends in `.pdf`; the archive stores the durable certificate link, not the
 rendered document itself.
 
+Before merging the current feed, the updater reads added certificate records
+from committed `data/**/*.json` patches. This backfills references observed
+before the history CSV existed without reopening every complete historical
+country file on each run. GitHub Actions uses a full clone so those revisions
+are available.
+
 ### Hull and crew
 
 | JSON field | CSV field | Unit | Meaning |

@@ -1,4 +1,5 @@
 import json
+import csv
 import sys
 import tempfile
 import unittest
@@ -109,6 +110,52 @@ class UpdateArchiveTests(unittest.TestCase):
                 (history / "index.html").read_text(),
             )
             self.assertTrue(retained.exists())
+
+    def test_update_backfills_certificates_from_git_observations(self):
+        index = b"""
+        <a href="/public/WPub.dll?action=DownRMS&amp;CountryId=LAT&amp;ext=json&amp;Family=1&amp;VPPYear=2026">JSON</a>
+        """
+        dataset_url = (
+            "https://data.orc.org/public/WPub.dll?action=DownRMS&"
+            "CountryId=LAT&ext=json&Family=1&VPPYear=2026"
+        )
+        responses = {
+            INDEX_URL: index,
+            dataset_url: b'{"rms":[{"RefNo":"NEW","SailNo":"LAT-790","YachtName":"Thunder"}]}',
+            csv_url(dataset_url): b'NAT,SAILNUMB,NAME,FILE_ID,CERTN.\nLAT,LAT-790,Thunder,LAT-790,2\n',
+        }
+        git_observations = [
+            (
+                "2026-08-21",
+                2026,
+                "LAT",
+                [{"RefNo": "OLD", "SailNo": "LAT-790", "YachtName": "Thunder"}],
+            )
+        ]
+
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory) / "data"
+            update_archive(
+                data_dir,
+                observed_on="2026-08-22",
+                fetcher=responses.__getitem__,
+                history_loader=lambda _: git_observations,
+            )
+
+            history_path = (
+                data_dir.parent
+                / "docs"
+                / "certificates"
+                / "2026"
+                / "certificates.csv"
+            )
+            with history_path.open(encoding="utf-8", newline="") as source:
+                rows = {row["ref_no"]: row for row in csv.DictReader(source)}
+
+            self.assertEqual({"OLD", "NEW"}, set(rows))
+            self.assertEqual("removed", rows["OLD"]["status"])
+            self.assertEqual("2026-08-21", rows["OLD"]["first_seen_on"])
+            self.assertEqual("active", rows["NEW"]["status"])
 
     def test_update_does_not_rewrite_unchanged_dataset(self):
         index = b"""

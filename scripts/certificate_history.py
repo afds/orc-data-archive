@@ -50,6 +50,9 @@ def _active_record(
     ref_no = _text(boat.get("RefNo"))
     if not ref_no:
         raise ValueError(f"{year}/{country} contains a certificate without RefNo")
+    first_seen_on = observed_on
+    if previous and previous.get("first_seen_on"):
+        first_seen_on = min(previous["first_seen_on"], observed_on)
     return {
         "vpp_year": str(year),
         "country": country,
@@ -63,9 +66,7 @@ def _active_record(
         "certificate_type": _text(boat.get("C_Type")),
         "family": _text(boat.get("Family")),
         "issue_date": _text(boat.get("IssueDate")),
-        "first_seen_on": (
-            previous.get("first_seen_on", observed_on) if previous else observed_on
-        ),
+        "first_seen_on": first_seen_on,
         "status": "active",
         "removed_on": "",
         "certificate_url": certificate_url(ref_no),
@@ -184,6 +185,11 @@ def _render_year_page(
             <option value="removed">Removed</option>
           </select>
         </label>
+        <label>Country
+          <select id="country-filter">
+            <option value="all">All countries</option>
+          </select>
+        </label>
       </div>
     </div>
     <div class="table-wrap">
@@ -240,6 +246,9 @@ def build_history_site(
     site_dir: Path,
     observations: Iterable[tuple[int, str, list[dict]]],
     observed_on: str,
+    historical_observations: Iterable[
+        tuple[str, int, str, list[dict]]
+    ] = (),
 ) -> dict[Path, bytes]:
     """Return all history/site files that should exist after this observation."""
     history_root = site_dir / "certificates"
@@ -250,6 +259,24 @@ def build_history_site(
         except ValueError:
             continue
         histories[year] = _load_history(path, year)
+
+    for historical_date, year, country, boats in historical_observations:
+        history = histories.setdefault(year, {})
+        for boat in boats:
+            ref_no = _text(boat.get("RefNo"))
+            if not ref_no:
+                raise ValueError(
+                    f"historical {year}/{country} contains a certificate without RefNo"
+                )
+            previous = history.get(ref_no)
+            if previous:
+                first_seen = previous.get("first_seen_on")
+                if not first_seen or historical_date < first_seen:
+                    previous["first_seen_on"] = historical_date
+            else:
+                history[ref_no] = _active_record(
+                    year, country, boat, historical_date, None
+                )
 
     observed_countries: dict[int, set[str]] = {}
     active_by_year: dict[int, dict[str, tuple[str, dict]]] = {}
