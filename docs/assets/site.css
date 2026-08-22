@@ -6,6 +6,9 @@
   --accent: #087f8c;
   --accent-dark: #075c65;
   --archived: #9a4b35;
+  --warning: #c26709;
+  --warning-dark: #844005;
+  --warning-surface: #fff5d8;
   --max-width: 1240px;
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -85,15 +88,15 @@ h1 {
 .years, .browser { border-top: 1px solid var(--ink); padding: 28px 0 60px; }
 
 .official-notice {
-  background: var(--surface);
-  border-left: 4px solid var(--accent);
+  background: var(--warning-surface);
+  border-left: 4px solid var(--warning);
   display: grid;
   gap: 6px;
   margin: -24px 0 48px;
   padding: 17px 20px;
 }
 
-.official-notice strong { font-size: 14px; }
+.official-notice strong { color: var(--warning-dark); font-size: 14px; }
 .official-notice p { color: var(--muted); line-height: 1.5; margin: 0; }
 .official-notice a { font-weight: 650; }
 
