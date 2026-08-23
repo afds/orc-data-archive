@@ -195,10 +195,10 @@ const renderPolar = () => {
   const svg = svgNode("svg", {
     viewBox: "0 0 920 590",
     role: "group",
-    "aria-labelledby": "polar-title polar-description",
+    "aria-label": "Speed polar",
+    "aria-describedby": "polar-description",
   });
   svg.append(
-    svgNode("title", {id: "polar-title"}, `${record.yacht_name} speed polar`),
     svgNode("desc", {id: "polar-description"}, "Apparent wind angle is plotted on the left, true wind angle on the right, and radial distance is target boat speed in knots."),
   );
 
@@ -269,7 +269,7 @@ const renderPolar = () => {
     marker.setAttribute("fill", color);
     marker.removeAttribute("hidden");
     polarTooltip.replaceChildren(
-      node("strong", formatWindSpeed(tws, state.windUnit)),
+      node("strong", `TWS ${formatWindSpeed(tws, state.windUnit)}`),
       node("span", `TWA ${angle(target.twa)}`),
       node("span", `AWA ${angle(target.awa)}`),
       node("span", `TBS ${speed(target.boatSpeed)} kt`),
