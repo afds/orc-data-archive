@@ -258,22 +258,81 @@ def _render_performance_json(records: dict[str, dict]) -> bytes:
 
 
 def _render_performance_page() -> bytes:
-    body = """<header class="site-header">
+    body = """<header class="site-header screen-only">
   <a class="brand" href="../">ORC certificate archive</a>
 </header>
-<main>
-  <h1>Rating Performance Guide</h1>
-  <p>Printable theoretical performance targets from archived ORC rating data.</p>
+<main class="performance-main">
+  <section class="performance-controls screen-only" id="performance-controls" aria-labelledby="controls-heading">
+    <div>
+      <p class="eyebrow">Rating Performance Guide</p>
+      <h1 id="controls-heading">Configure cockpit reference</h1>
+    </div>
+    <label for="tws-input">True wind speed
+      <span class="wind-input"><input id="tws-input" type="number" inputmode="decimal"><span id="tws-unit-label">kt</span></span>
+    </label>
+    <fieldset id="wind-unit"><legend>Wind unit</legend>
+      <label><input type="radio" name="wind-unit" value="kt" checked> knots</label>
+      <label><input type="radio" name="wind-unit" value="ms"> m/s</label>
+    </fieldset>
+    <div><span class="control-label">Published TWS</span><div class="wind-presets" id="wind-presets"></div></div>
+    <button class="print-button" id="print-guide" type="button">Print / Save as PDF</button>
+    <p class="control-status" id="control-status" aria-live="polite"></p>
+  </section>
+
+  <section class="guide-error screen-only" id="guide-error" role="alert" hidden>
+    <h2>Performance guide unavailable</h2>
+    <p id="guide-error-message"></p>
+    <a id="guide-error-link" href="../">Return to the certificate archive</a>
+  </section>
+
+  <div id="performance-guide" hidden>
+    <section class="performance-sheet cockpit-sheet" id="cockpit-sheet" aria-labelledby="guide-title">
+      <header class="guide-header">
+        <div><p class="eyebrow">Rating Performance Guide</p><h2 id="guide-title"><span id="yacht-name"></span> <small id="sail-number"></small></h2><p id="boat-summary"></p></div>
+        <div class="guide-meta"><span id="vpp-year"></span><span id="issue-date"></span><span id="certificate-status"></span></div>
+      </header>
+      <div class="selected-summary" id="selected-summary"><span id="selected-tws"></span><span id="interpolated-badge" hidden>Interpolated</span></div>
+      <div class="target-cards"><article class="target-card target-beat" id="beat-card"></article><article class="target-card target-run" id="run-card"></article></div>
+      <section class="optimum-section" aria-labelledby="optimum-heading"><h3 id="optimum-heading">Best VMG targets</h3><div class="optimum-tables">
+        <div class="table-wrap"><table><caption>Upwind targets</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Boat speed</th><th scope="col">VMG</th></tr></thead><tbody id="beat-targets"></tbody></table></div>
+        <div class="table-wrap"><table><caption>Downwind targets</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Boat speed</th><th scope="col">VMG</th></tr></thead><tbody id="run-targets"></tbody></table></div>
+      </div></section>
+      <section class="matrix-section" aria-labelledby="matrix-heading"><h3 id="matrix-heading">Target boat speed by true-wind angle</h3><p>Large values are target boat speed in knots; smaller values are apparent wind angle.</p><div class="table-wrap"><table class="target-matrix" id="target-matrix"><thead><tr id="matrix-head"><th scope="col">TWA</th></tr></thead><tbody id="matrix-body"></tbody></table></div></section>
+      <p class="sheet-note">Theoretical ORC VPP rating targets. Actual performance varies with sea state, wind shear, crew execution, and instrument calibration.</p>
+    </section>
+
+    <section class="performance-sheet polar-sheet" id="polar-sheet" aria-labelledby="polar-heading">
+      <header class="guide-header"><div><p class="eyebrow">Rating Performance Guide</p><h2 id="polar-heading">Dual-angle speed polar</h2><p id="polar-boat-name"></p></div><div class="guide-meta"><span>AWA left · TWA right</span><span>Boat speed radial scale in knots</span></div></header>
+      <div class="polar-legend" id="polar-legend" aria-label="True wind speed curves"></div>
+      <div class="polar-chart" id="polar-chart"></div>
+      <aside class="reading-guide"><h3>Using this guide</h3><p><strong>AWA</strong> is the wind angle commonly felt and displayed aboard. <strong>TWA</strong> describes the course relative to true wind. Optimum beat and run angles maximize VMG toward a windward or leeward mark.</p><p>ORC predictions use wind referenced at 10 metres above the water. This independent rating polar is not an official ORC Speed Guide and does not identify individual sail choices.</p></aside>
+      <footer class="guide-links"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="../data-fields.html">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
+    </section>
+  </div>
+  <noscript><p class="guide-error">JavaScript is required to calculate and display this performance guide.</p></noscript>
 </main>"""
-    return _page("Rating Performance Guide", body, "../")
+    return _page(
+        "Rating Performance Guide",
+        body,
+        "../",
+        module_script="../assets/performance.js",
+    )
 
 
-def _page(title: str, body: str, asset_prefix: str, with_script: bool = False) -> bytes:
+def _page(
+    title: str,
+    body: str,
+    asset_prefix: str,
+    with_script: bool = False,
+    module_script: str | None = None,
+) -> bytes:
     script = (
         f'<script src="{asset_prefix}assets/site.js" defer></script>'
         if with_script
         else ""
     )
+    if module_script is not None:
+        script = f'<script type="module" src="{module_script}"></script>'
     document = f"""<!doctype html>
 <html lang="en">
 <head>

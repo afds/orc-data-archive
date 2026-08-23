@@ -111,6 +111,15 @@ export const conditionAtTws = (allowances, tws) => {
   };
 };
 
+export const matrixConditions = (allowances, selectedTws) => {
+  const published = allowances.wind_speeds.map((_, index) => (
+    publishedCondition(allowances, index)
+  ));
+  if (allowances.wind_speeds.includes(selectedTws)) return published;
+  const selected = conditionAtTws(allowances, selectedTws);
+  return [...published, selected].sort((left, right) => left.tws - right.tws);
+};
+
 export const convertWindSpeed = (value, fromUnit, toUnit) => {
   finite(value, "wind speed");
   if (!["kt", "ms"].includes(fromUnit) || !["kt", "ms"].includes(toUnit)) {

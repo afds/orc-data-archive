@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
+import * as performanceCore from "../docs/assets/performance-core.mjs";
+
+const {
   apparentWind,
   conditionAtTws,
   convertWindSpeed,
@@ -9,7 +11,8 @@ import {
   publishedCondition,
   readGuideState,
   writeGuideState,
-} from "../docs/assets/performance-core.mjs";
+} = performanceCore;
+const matrixConditions = performanceCore.matrixConditions ?? (() => []);
 
 const adeleAllowances = {
   wind_speeds: [8, 10],
@@ -104,4 +107,17 @@ test("polar coordinates mirror AWA left and TWA right", () => {
   assert.deepEqual(polarPoint(90, 5, "right", 10), {x: 50, y: 0});
   assert.deepEqual(polarPoint(90, 5, "left", 10), {x: -50, y: 0});
   assert.deepEqual(polarPoint(180, 5, "left", 10), {x: 0, y: 50});
+});
+
+test("matrix inserts one selected interpolated column in wind-speed order", () => {
+  const columns = matrixConditions(adeleAllowances, 9);
+
+  assert.deepEqual(columns.map(({tws}) => tws), [8, 9, 10]);
+  assert.deepEqual(columns.map(({interpolated}) => interpolated), [false, true, false]);
+});
+
+test("matrix does not duplicate an exact published selection", () => {
+  const columns = matrixConditions(adeleAllowances, 10);
+
+  assert.deepEqual(columns.map(({tws}) => tws), [8, 10]);
 });

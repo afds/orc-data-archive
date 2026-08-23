@@ -143,6 +143,28 @@ class CertificateHistoryTests(unittest.TestCase):
             )
             self.assertEqual("", rows["NO-POLAR"]["performance_url"])
 
+    def test_generates_performance_page_shell(self):
+        with tempfile.TemporaryDirectory() as directory:
+            site_dir = Path(directory) / "docs"
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [polar_boat()])],
+                    "2026-08-22",
+                )
+            )
+
+            page = (site_dir / "performance" / "index.html").read_text()
+            self.assertIn(
+                'type="module" src="../assets/performance.js"',
+                page,
+            )
+            self.assertIn('id="performance-controls"', page)
+            self.assertIn('id="guide-error" role="alert"', page)
+            self.assertIn('id="cockpit-sheet"', page)
+            self.assertIn('id="polar-sheet"', page)
+            self.assertIn('id="target-matrix"', page)
+
     def test_certificate_url_uses_orc_reference(self):
         self.assertEqual(
             "https://data.orc.org/public/WPub.dll/CC/04340004VU1.pdf",
