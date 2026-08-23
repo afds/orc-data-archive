@@ -178,12 +178,21 @@ export const polarPoint = (angleDegrees, boatSpeed, side, scale) => {
   };
 };
 
-export const smoothSvgPath = (points, tension = 1 / 6) => {
+export const interpolatePolarTarget = (start, end, ratio) => {
+  return {
+    twa: lerp(start.twa, end.twa, ratio),
+    awa: lerp(start.awa, end.awa, ratio),
+    boatSpeed: lerp(start.boatSpeed, end.boatSpeed, ratio),
+    vmg: lerp(start.vmg, end.vmg, ratio),
+  };
+};
+
+const smoothSvgCommands = (points, tension) => {
   if (!Array.isArray(points) || points.length < 2) {
     throw new RangeError("a polar curve needs at least two points");
   }
   const coordinate = ({x, y}) => `${x.toFixed(2)} ${y.toFixed(2)}`;
-  const segments = points.slice(0, -1).map((point, index) => {
+  return points.slice(0, -1).map((point, index) => {
     const previous = points[index - 1] ?? point;
     const next = points[index + 1];
     const following = points[index + 2] ?? next;
@@ -195,9 +204,20 @@ export const smoothSvgPath = (points, tension = 1 / 6) => {
       x: next.x - (following.x - point.x) * tension,
       y: next.y - (following.y - point.y) * tension,
     };
-    return `C ${coordinate(firstControl)}, ${coordinate(secondControl)}, ${coordinate(next)}`;
+    return {
+      start: coordinate(point),
+      curve: `C ${coordinate(firstControl)}, ${coordinate(secondControl)}, ${coordinate(next)}`,
+    };
   });
-  return `M ${coordinate(points[0])} ${segments.join(" ")}`;
+};
+
+export const smoothSvgSegments = (points, tension = 1 / 6) => (
+  smoothSvgCommands(points, tension).map(({start, curve}) => `M ${start} ${curve}`)
+);
+
+export const smoothSvgPath = (points, tension = 1 / 6) => {
+  const commands = smoothSvgCommands(points, tension);
+  return `M ${commands[0].start} ${commands.map(({curve}) => curve).join(" ")}`;
 };
 
 export const polarSeries = (condition) => {
@@ -209,12 +229,18 @@ export const polarSeries = (condition) => {
   return {
     left: targets.map((target) => ({
       angle: target.awa,
+      twa: target.twa,
+      awa: target.awa,
       boatSpeed: target.boatSpeed,
+      vmg: target.vmg,
       kind: target.kind,
     })),
     right: targets.map((target) => ({
       angle: target.twa,
+      twa: target.twa,
+      awa: target.awa,
       boatSpeed: target.boatSpeed,
+      vmg: target.vmg,
       kind: target.kind,
     })),
   };

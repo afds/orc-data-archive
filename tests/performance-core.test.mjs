@@ -15,7 +15,9 @@ const {
   writeGuideState,
 } = performanceCore;
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
+const interpolatePolarTarget = performanceCore.interpolatePolarTarget ?? (() => ({}));
 const polarSeries = performanceCore.polarSeries ?? (() => ({left: [], right: []}));
+const smoothSvgSegments = performanceCore.smoothSvgSegments ?? (() => []);
 
 const adeleAllowances = {
   wind_speeds: [8, 10],
@@ -131,10 +133,31 @@ test("polar coordinates mirror AWA left and TWA right", () => {
   assert.deepEqual(polarPoint(180, 5, "left", 10), {x: 0, y: 50});
 });
 
+test("polar tooltip values interpolate continuously between adjacent targets", () => {
+  assert.deepEqual(
+    interpolatePolarTarget(
+      {twa: 40, awa: 25, boatSpeed: 6, vmg: 4.5},
+      {twa: 60, awa: 37, boatSpeed: 7, vmg: 3.5},
+      0.25,
+    ),
+    {twa: 45, awa: 28, boatSpeed: 6.25, vmg: 4.25},
+  );
+});
+
 test("polar curves use a restrained smooth path through every target", () => {
   assert.equal(
     smoothSvgPath([{x: 0, y: 0}, {x: 10, y: 10}, {x: 20, y: 0}]),
     "M 0.00 0.00 C 1.67 1.67, 6.67 10.00, 10.00 10.00 C 13.33 10.00, 18.33 1.67, 20.00 0.00",
+  );
+});
+
+test("polar curve segments preserve the same smooth geometry for hit testing", () => {
+  assert.deepEqual(
+    smoothSvgSegments([{x: 0, y: 0}, {x: 10, y: 10}, {x: 20, y: 0}]),
+    [
+      "M 0.00 0.00 C 1.67 1.67, 6.67 10.00, 10.00 10.00",
+      "M 10.00 10.00 C 13.33 10.00, 18.33 1.67, 20.00 0.00",
+    ],
   );
 });
 
@@ -172,5 +195,9 @@ test("polar series orders beat, fixed angles, and run on both angle systems", ()
   assert.deepEqual(
     series.right.map(({kind}) => kind),
     ["beat", "fixed", "fixed", "run"],
+  );
+  assert.deepEqual(
+    Object.keys(series.right[0]).sort(),
+    ["angle", "awa", "boatSpeed", "kind", "twa", "vmg"],
   );
 });

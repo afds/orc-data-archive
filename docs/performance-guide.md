@@ -29,7 +29,10 @@ a smaller secondary value.
 The second page contains a mirrored speed polar. Apparent-wind angle is plotted
 on the left, true-wind angle on the right, and radial distance is target boat
 speed in knots. It includes all published TWS curves and marks optimum beat and
-run endpoints.
+run endpoints. On screen, hover over a curve or tap and drag across it to inspect
+continuously interpolated TWS, TWA, AWA, target boat speed, and VMG. Keyboard
+users can focus a wind-speed curve and use the arrow keys; the interaction layer
+is omitted from printing.
 
 ## Calculations
 

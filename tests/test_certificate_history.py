@@ -178,6 +178,7 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertIn('<footer class="sheet-note">', page)
             self.assertNotIn('id="vpp-year"', page)
             self.assertIn('id="polar-sheet"', page)
+            self.assertIn('id="polar-tooltip" role="tooltip" hidden', page)
             self.assertNotIn("Configure reference", page)
             self.assertIn('aria-label="Reference controls"', page)
             self.assertNotIn('id="angle-mode"', page)

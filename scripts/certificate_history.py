@@ -286,7 +286,7 @@ def _render_performance_page() -> bytes:
     <section class="performance-sheet polar-sheet" id="polar-sheet" aria-labelledby="polar-heading">
       <header class="guide-header"><div><p class="eyebrow">Performance Guide</p><h2 id="polar-heading"><span id="polar-yacht-name"></span> <small id="polar-sail-number"></small></h2></div><div class="guide-meta"><span id="polar-certificate-ref"></span><span id="polar-issue-date"></span></div></header>
       <div class="polar-legend" id="polar-legend" aria-label="True wind speed curves"></div>
-      <div class="polar-chart" id="polar-chart"></div>
+      <div class="polar-chart" id="polar-chart"><div class="polar-tooltip" id="polar-tooltip" role="tooltip" hidden aria-live="polite"></div></div>
     </section>
   </div>
   <noscript><p class="guide-error">JavaScript is required to calculate and display this performance guide.</p></noscript>

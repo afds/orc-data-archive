@@ -272,7 +272,7 @@ footer {
 .polar-legend span { align-items: center; color: var(--muted); display: inline-flex; font-size: 10px; gap: 5px; }
 .polar-legend i { border-top: 3px solid; display: inline-block; width: 22px; }
 .polar-legend small { font-size: 8px; font-weight: 650; text-transform: uppercase; }
-.polar-chart { margin: 0 auto; max-width: 1120px; }
+.polar-chart { margin: 0 auto; max-width: 1120px; position: relative; }
 .polar-chart svg { display: block; height: auto; max-height: 760px; width: 100%; }
 .polar-grid circle, .polar-grid line { fill: none; stroke: #d7e0e4; stroke-width: 1; }
 .polar-grid text { fill: var(--muted); font-family: inherit; font-size: 9px; }
@@ -281,6 +281,16 @@ footer {
 .polar-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .polar-series { opacity: .78; }
 .polar-endpoint { stroke: #fff; stroke-width: 1; }
+.polar-hit-area { cursor: crosshair; fill: none; pointer-events: stroke; stroke: transparent; stroke-width: 18; touch-action: none; }
+.polar-chart svg.is-inspecting .polar-series { opacity: .18; }
+.polar-chart svg.is-inspecting .polar-series.is-active, .polar-series:focus { opacity: 1; }
+.polar-series.is-active .polar-curve, .polar-series:focus .polar-curve { stroke-width: 3; }
+.polar-series:focus { outline: none; }
+.polar-inspection-marker { pointer-events: none; stroke: #fff; stroke-width: 2; }
+.polar-inspection-marker[hidden] { display: none; }
+.polar-tooltip { background: rgb(11 36 50 / 94%); border-radius: 7px; box-shadow: 0 5px 18px rgb(11 36 50 / 20%); color: #fff; display: grid; font-size: 11px; font-variant-numeric: tabular-nums; gap: 3px 12px; grid-template-columns: repeat(2, max-content); line-height: 1.25; padding: 8px 10px; pointer-events: none; position: absolute; z-index: 2; }
+.polar-tooltip[hidden] { display: none; }
+.polar-tooltip strong { color: #a9e0e5; grid-column: 1 / -1; letter-spacing: .02em; }
 
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid rgb(8 127 140 / 24%); outline-offset: 2px; }
 
@@ -289,7 +299,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 @media print {
   :root { color: #0b2432; }
   body { background: #fff; }
-  .screen-only, .site-header, .performance-controls, .guide-header, .sheet-note, noscript { display: none !important; }
+  .screen-only, .site-header, .performance-controls, .guide-header, .sheet-note, .polar-tooltip, .polar-hit-area, .polar-inspection-marker, noscript { display: none !important; }
   .performance-main { margin: 0; max-width: none; padding: 0; }
   #performance-guide { display: block !important; }
   .performance-sheet {

@@ -1,10 +1,12 @@
 import {
   formatWindSpeed,
+  interpolatePolarTarget,
   polarPoint,
   polarSeries,
   publishedCondition,
   readGuideState,
   smoothSvgPath,
+  smoothSvgSegments,
   writeGuideState,
 } from "./performance-core.mjs";
 
@@ -14,6 +16,8 @@ const errorBox = byId("guide-error");
 const errorMessage = byId("guide-error-message");
 const errorLink = byId("guide-error-link");
 const unitInputs = [...document.querySelectorAll('input[name="wind-unit"]')];
+const polarChart = byId("polar-chart");
+const polarTooltip = byId("polar-tooltip");
 
 let record;
 let state;
@@ -53,6 +57,70 @@ const svgNode = (tag, attributes = {}, text) => {
   }
   if (text !== undefined) element.textContent = text;
   return element;
+};
+
+const closestPointOnPath = (path, x, y) => {
+  const totalLength = path.getTotalLength();
+  const sampleCount = Math.max(12, Math.ceil(totalLength / 6));
+  let bestLength = 0;
+  let bestDistance = Infinity;
+  for (let index = 0; index <= sampleCount; index += 1) {
+    const length = totalLength * index / sampleCount;
+    const point = path.getPointAtLength(length);
+    const distance = (point.x - x) ** 2 + (point.y - y) ** 2;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestLength = length;
+    }
+  }
+
+  let lower = Math.max(0, bestLength - totalLength / sampleCount);
+  let upper = Math.min(totalLength, bestLength + totalLength / sampleCount);
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const left = lower + (upper - lower) / 3;
+    const right = upper - (upper - lower) / 3;
+    const leftPoint = path.getPointAtLength(left);
+    const rightPoint = path.getPointAtLength(right);
+    const leftDistance = (leftPoint.x - x) ** 2 + (leftPoint.y - y) ** 2;
+    const rightDistance = (rightPoint.x - x) ** 2 + (rightPoint.y - y) ** 2;
+    if (leftDistance <= rightDistance) upper = right;
+    else lower = left;
+  }
+  const length = (lower + upper) / 2;
+  return {
+    point: path.getPointAtLength(length),
+    ratio: totalLength === 0 ? 0 : length / totalLength,
+  };
+};
+
+const svgCoordinates = (svg, event) => {
+  const point = svg.createSVGPoint();
+  point.x = event.clientX;
+  point.y = event.clientY;
+  return point.matrixTransform(svg.getScreenCTM().inverse());
+};
+
+const positionTooltip = (clientX, clientY) => {
+  const bounds = polarChart.getBoundingClientRect();
+  const offset = 12;
+  let left = clientX - bounds.left + offset;
+  let top = clientY - bounds.top + offset;
+  if (left + polarTooltip.offsetWidth > bounds.width - 6) {
+    left = clientX - bounds.left - polarTooltip.offsetWidth - offset;
+  }
+  if (top + polarTooltip.offsetHeight > bounds.height - 6) {
+    top = clientY - bounds.top - polarTooltip.offsetHeight - offset;
+  }
+  polarTooltip.style.left = `${Math.max(6, left)}px`;
+  polarTooltip.style.top = `${Math.max(6, top)}px`;
+};
+
+const clientCoordinates = (svg, point) => {
+  const svgPoint = svg.createSVGPoint();
+  svgPoint.x = point.x;
+  svgPoint.y = point.y;
+  const transformed = svgPoint.matrixTransform(svg.getScreenCTM());
+  return {x: transformed.x, y: transformed.y};
 };
 
 const renderSpeedTable = () => {
@@ -126,7 +194,7 @@ const renderPolar = () => {
   const center = {x: 460, y: 285};
   const svg = svgNode("svg", {
     viewBox: "0 0 920 590",
-    role: "img",
+    role: "group",
     "aria-labelledby": "polar-title polar-description",
   });
   svg.append(
@@ -176,6 +244,41 @@ const renderPolar = () => {
   const palette = ["#78909c", "#5e8d94", "#2f8793", "#087f8c", "#22647a", "#314f68", "#614f75", "#a55845", "#cf6f2f", "#0b3f46"];
   const dashPatterns = ["2 4", "7 4", "1 3", "none", "10 4", "7 3 2 3", "3 3", "12 3", "5 2", "none"];
   const legendItems = [];
+  const marker = svgNode("circle", {
+    class: "polar-inspection-marker",
+    r: 4.5,
+    hidden: "",
+  });
+  let activeGroup;
+
+  const hideInspection = () => {
+    activeGroup?.classList.remove("is-active");
+    activeGroup = undefined;
+    svg.classList.remove("is-inspecting");
+    marker.setAttribute("hidden", "");
+    polarTooltip.hidden = true;
+  };
+
+  const showInspection = (group, color, tws, target, point, clientX, clientY) => {
+    activeGroup?.classList.remove("is-active");
+    activeGroup = group;
+    group.classList.add("is-active");
+    svg.classList.add("is-inspecting");
+    marker.setAttribute("cx", point.x);
+    marker.setAttribute("cy", point.y);
+    marker.setAttribute("fill", color);
+    marker.removeAttribute("hidden");
+    polarTooltip.replaceChildren(
+      node("strong", formatWindSpeed(tws, state.windUnit)),
+      node("span", `TWA ${angle(target.twa)}`),
+      node("span", `AWA ${angle(target.awa)}`),
+      node("span", `TBS ${speed(target.boatSpeed)} kt`),
+      node("span", `VMG ${speed(target.vmg)} kt`),
+    );
+    polarTooltip.hidden = false;
+    positionTooltip(clientX, clientY);
+  };
+
   conditions.forEach((condition, index) => {
     const series = polarSeries(condition);
     const color = palette[index % palette.length];
@@ -183,7 +286,12 @@ const renderPolar = () => {
     const group = svgNode("g", {
       class: "polar-series",
       "data-tws": condition.tws,
+      tabindex: 0,
+      role: "button",
+      "aria-label": `${formatWindSpeed(condition.tws, state.windUnit)} polar curve. Use left and right arrow keys to inspect targets.`,
+      "aria-describedby": "polar-tooltip",
     });
+    const keyboardSegments = [];
     for (const [side, points] of Object.entries(series)) {
       const coordinates = points.map((target) => {
         const point = polarPoint(target.angle, target.boatSpeed, side, scale);
@@ -195,6 +303,41 @@ const renderPolar = () => {
         stroke: color,
         "stroke-dasharray": dash,
       }));
+      smoothSvgSegments(coordinates).forEach((pathData, segmentIndex) => {
+        const hitPath = svgNode("path", {
+          d: pathData,
+          class: "polar-hit-area",
+        });
+        const inspect = (event) => {
+          const cursor = svgCoordinates(svg, event);
+          const closest = closestPointOnPath(hitPath, cursor.x, cursor.y);
+          const target = interpolatePolarTarget(
+            points[segmentIndex],
+            points[segmentIndex + 1],
+            closest.ratio,
+          );
+          showInspection(
+            group,
+            color,
+            condition.tws,
+            target,
+            closest.point,
+            event.clientX,
+            event.clientY,
+          );
+        };
+        hitPath.addEventListener("pointerenter", inspect);
+        hitPath.addEventListener("pointermove", inspect);
+        hitPath.addEventListener("pointerdown", inspect);
+        hitPath.addEventListener("pointerleave", (event) => {
+          if (event.pointerType === "mouse") hideInspection();
+        });
+        hitPath.addEventListener("pointercancel", hideInspection);
+        group.append(hitPath);
+        if (side === "right") {
+          keyboardSegments.push({path: hitPath, start: points[segmentIndex], end: points[segmentIndex + 1]});
+        }
+      });
       for (const endpoint of [points[0], points.at(-1)]) {
         const point = polarPoint(endpoint.angle, endpoint.boatSpeed, side, scale);
         group.append(svgNode("circle", {
@@ -206,6 +349,43 @@ const renderPolar = () => {
         }));
       }
     }
+    let keyboardPosition = 0;
+    const showKeyboardInspection = () => {
+      const segmentIndex = Math.min(
+        keyboardSegments.length - 1,
+        Math.floor(keyboardPosition / 10),
+      );
+      const ratio = segmentIndex === keyboardSegments.length - 1 && keyboardPosition === keyboardSegments.length * 10
+        ? 1
+        : (keyboardPosition % 10) / 10;
+      const segment = keyboardSegments[segmentIndex];
+      const target = interpolatePolarTarget(segment.start, segment.end, ratio);
+      const point = segment.path.getPointAtLength(segment.path.getTotalLength() * ratio);
+      const client = clientCoordinates(svg, point);
+      showInspection(group, color, condition.tws, target, point, client.x, client.y);
+    };
+    group.addEventListener("focus", showKeyboardInspection);
+    group.addEventListener("blur", hideInspection);
+    group.addEventListener("keydown", (event) => {
+      const maximum = keyboardSegments.length * 10;
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        keyboardPosition = Math.min(maximum, keyboardPosition + 1);
+      } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        keyboardPosition = Math.max(0, keyboardPosition - 1);
+      } else if (event.key === "Home") {
+        keyboardPosition = 0;
+      } else if (event.key === "End") {
+        keyboardPosition = maximum;
+      } else if (event.key === "Escape") {
+        hideInspection();
+        group.blur();
+        return;
+      } else {
+        return;
+      }
+      event.preventDefault();
+      showKeyboardInspection();
+    });
     svg.append(group);
 
     const item = node("span");
@@ -218,8 +398,11 @@ const renderPolar = () => {
     );
     legendItems.push(item);
   });
+  svg.append(marker);
+  svg.addEventListener("mouseleave", hideInspection);
   byId("polar-legend").replaceChildren(...legendItems);
-  byId("polar-chart").replaceChildren(svg);
+  polarTooltip.hidden = true;
+  polarChart.replaceChildren(svg, polarTooltip);
 };
 
 const syncUrl = () => {
