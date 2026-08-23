@@ -13,16 +13,12 @@
   <a class="brand" href="../">ORC certificate archive</a>
 </header>
 <main class="performance-main">
-  <section class="performance-controls screen-only" id="performance-controls" aria-labelledby="controls-heading">
-    <div>
-      <p class="eyebrow">Rating Performance Guide</p>
-      <h1 id="controls-heading">Configure reference</h1>
-    </div>
-    <fieldset id="wind-unit"><legend>Wind unit</legend>
+  <section class="performance-controls screen-only" id="performance-controls" aria-label="Reference controls">
+    <fieldset id="wind-unit"><legend>Wind</legend>
       <label><input type="radio" name="wind-unit" value="kt" checked> knots</label>
       <label><input type="radio" name="wind-unit" value="ms"> m/s</label>
     </fieldset>
-    <button class="print-button" id="print-guide" type="button">Print / Save as PDF</button>
+    <button class="print-button" id="print-guide" type="button">Print / Save PDF</button>
   </section>
 
   <section class="guide-error screen-only" id="guide-error" role="alert" hidden>
@@ -34,18 +30,21 @@
   <div id="performance-guide" hidden>
     <section class="performance-sheet cockpit-sheet" id="cockpit-sheet" aria-labelledby="guide-title">
       <header class="guide-header">
-        <div><p class="eyebrow">Rating Performance Guide</p><h2 id="guide-title"><span id="yacht-name"></span> <small id="sail-number"></small></h2><p id="boat-summary"></p></div>
-        <div class="guide-meta"><span id="certificate-ref"></span><span id="issue-date"></span><span id="certificate-status"></span></div>
+        <div><p class="eyebrow">Rating Performance Guide</p><h2 id="guide-title"><span id="yacht-name"></span> <small id="sail-number"></small></h2></div>
+        <div class="guide-meta"><span id="certificate-ref"></span><span id="issue-date"></span></div>
       </header>
-      <section class="performance-table-section" aria-labelledby="matrix-heading"><h3 id="matrix-heading">Target boat speed</h3><div class="table-wrap"><table class="performance-table"><thead id="performance-head"></thead><tbody id="performance-body"></tbody></table></div></section>
-      <p class="sheet-note">Theoretical ORC VPP rating targets. Actual performance varies with sea state, wind shear, crew execution, and instrument calibration.</p>
+      <section class="performance-table-section optimum-section" aria-labelledby="vmg-heading"><h3 id="vmg-heading">Best VMG targets</h3><div class="optimum-tables">
+        <div class="table-wrap"><table class="vmg-table"><caption>Beat</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Speed</th><th scope="col">VMG</th></tr></thead><tbody id="beat-targets"></tbody></table></div>
+        <div class="table-wrap"><table class="vmg-table"><caption>Run</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Speed</th><th scope="col">VMG</th></tr></thead><tbody id="run-targets"></tbody></table></div>
+      </div></section>
+      <section class="performance-table-section" aria-labelledby="speed-heading"><h3 id="speed-heading">Target boat speed</h3><div class="table-wrap"><table class="speed-table"><thead id="speed-head"></thead><tbody id="speed-body"></tbody></table></div></section>
+      <footer class="sheet-note">Theoretical ORC VPP rating targets. Actual performance varies with sea state, wind shear, crew execution, and instrument calibration.</footer>
     </section>
 
     <section class="performance-sheet polar-sheet" id="polar-sheet" aria-labelledby="polar-heading">
-      <header class="guide-header"><div><p class="eyebrow">Dual-angle speed polar</p><h2 id="polar-heading"><span id="polar-yacht-name"></span> <small id="polar-sail-number"></small></h2></div><div class="guide-meta"><span id="polar-certificate-ref"></span></div></header>
+      <header class="guide-header"><div><p class="eyebrow">Rating Performance Guide</p><h2 id="polar-heading"><span id="polar-yacht-name"></span> <small id="polar-sail-number"></small></h2></div><div class="guide-meta"><span id="polar-certificate-ref"></span><span id="polar-issue-date"></span></div></header>
       <div class="polar-legend" id="polar-legend" aria-label="True wind speed curves"></div>
       <div class="polar-chart" id="polar-chart"></div>
-      <footer class="guide-links screen-only"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="https://github.com/afds/orc-data-archive/blob/main/docs/data-fields.md">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
     </section>
   </div>
   <noscript><p class="guide-error">JavaScript is required to calculate and display this performance guide.</p></noscript>

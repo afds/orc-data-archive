@@ -41,7 +41,8 @@ https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LA
 
 Certificate rows link to a reusable Rating Performance Guide. It provides
 complete beat and run targets when public polar data is available, a
-boat-speed/AWA table, and a mirrored AWA/TWA polar. The two-sheet A4
+boat-speed/AWA table, and a mirrored
+AWA/TWA polar. The two-sheet A4
 landscape layout can be printed directly or saved as PDF.
 
 Guide state is shareable by VPP year, country, ORC reference, and wind unit.

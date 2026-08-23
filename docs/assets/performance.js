@@ -35,7 +35,7 @@ const setFatalError = (message, year = "") => {
   guide.hidden = true;
 };
 
-const speed = (value) => `${value.toFixed(1)} kt`;
+const speed = (value) => value.toFixed(1);
 const angle = (value, dense = false) => `${dense ? value.toFixed(0) : value.toFixed(1)}°`;
 const date = (value) => {
   if (!value) return "Issue date unavailable";
@@ -55,21 +55,15 @@ const svgNode = (tag, attributes = {}, text) => {
   return element;
 };
 
-const renderPerformanceTable = () => {
+const renderSpeedTable = () => {
   const axes = node("tr");
   const twsHeading = node("th", "TWS ↓");
   twsHeading.scope = "col";
   twsHeading.rowSpan = 2;
-  const beatHeading = node("th", "Beat", "optimum-heading");
-  beatHeading.scope = "col";
-  beatHeading.rowSpan = 2;
   const twaHeading = node("th", "TWA →");
   twaHeading.scope = "colgroup";
   twaHeading.colSpan = record.allowances.wind_angles.length;
-  const runHeading = node("th", "Run", "optimum-heading");
-  runHeading.scope = "col";
-  runHeading.rowSpan = 2;
-  axes.append(twsHeading, beatHeading, twaHeading, runHeading);
+  axes.append(twsHeading, twaHeading);
 
   const angles = node("tr");
   for (const twa of record.allowances.wind_angles) {
@@ -77,35 +71,44 @@ const renderPerformanceTable = () => {
     heading.scope = "col";
     angles.append(heading);
   }
-  byId("performance-head").replaceChildren(axes, angles);
+  byId("speed-head").replaceChildren(axes, angles);
 
-  const optimumCell = (target) => {
-    const cell = node("td", undefined, "optimum-cell");
-    cell.append(
-      node("strong", speed(target.boatSpeed)),
-      node("small", `TWA ${angle(target.twa)} · AWA ${angle(target.awa)}`),
-      node("small", `VMG ${speed(target.vmg)}`),
-    );
-    return cell;
-  };
   const rows = record.allowances.wind_speeds.map((_, index) => {
     const condition = publishedCondition(record.allowances, index);
     const row = node("tr");
     const tws = node("th", formatWindSpeed(condition.tws, state.windUnit));
     tws.scope = "row";
-    row.append(tws, optimumCell(condition.beat));
+    row.append(tws);
     for (const target of condition.fixed) {
       const cell = node("td");
       cell.append(
-        node("strong", speed(target.boatSpeed)),
+        node("strong", `${speed(target.boatSpeed)} kt`),
         node("small", `AWA ${angle(target.awa, true)}`),
       );
       row.append(cell);
     }
-    row.append(optimumCell(condition.run));
     return row;
   });
-  byId("performance-body").replaceChildren(...rows);
+  byId("speed-body").replaceChildren(...rows);
+};
+
+const renderVmgTable = (targetName, bodyId) => {
+  const rows = record.allowances.wind_speeds.map((_, index) => {
+    const condition = publishedCondition(record.allowances, index);
+    const target = condition[targetName];
+    const row = node("tr");
+    const tws = node("th", formatWindSpeed(condition.tws, state.windUnit));
+    tws.scope = "row";
+    row.append(
+      tws,
+      node("td", angle(target.twa)),
+      node("td", angle(target.awa)),
+      node("td", `${speed(target.boatSpeed)} kt`),
+      node("td", `${speed(target.vmg)} kt`),
+    );
+    return row;
+  });
+  byId(bodyId).replaceChildren(...rows);
 };
 
 const renderPolar = () => {
@@ -127,7 +130,7 @@ const renderPolar = () => {
     "aria-labelledby": "polar-title polar-description",
   });
   svg.append(
-    svgNode("title", {id: "polar-title"}, `${record.yacht_name} dual-angle speed polar`),
+    svgNode("title", {id: "polar-title"}, `${record.yacht_name} speed polar`),
     svgNode("desc", {id: "polar-description"}, "Apparent wind angle is plotted on the left, true wind angle on the right, and radial distance is target boat speed in knots."),
   );
 
@@ -167,8 +170,6 @@ const renderPolar = () => {
   grid.append(
     svgNode("text", {x: 90, y: 28, class: "polar-side-label"}, "AWA"),
     svgNode("text", {x: 790, y: 28, class: "polar-side-label"}, "TWA"),
-    svgNode("text", {x: 475, y: 22, class: "polar-wind-label"}, "TRUE WIND"),
-    svgNode("path", {d: "M460 8 L460 38 M454 29 L460 38 L466 29", class: "polar-wind-arrow"}),
   );
   svg.append(grid);
 
@@ -227,7 +228,9 @@ const syncUrl = () => {
 };
 
 const renderGuide = () => {
-  renderPerformanceTable();
+  renderVmgTable("beat", "beat-targets");
+  renderVmgTable("run", "run-targets");
+  renderSpeedTable();
   renderPolar();
   byId("polar-yacht-name").textContent = record.yacht_name || "Unnamed yacht";
   byId("polar-sail-number").textContent = record.sail_no || record.ref_no;
@@ -270,12 +273,10 @@ const initialize = async () => {
 
   byId("yacht-name").textContent = record.yacht_name || "Unnamed yacht";
   byId("sail-number").textContent = record.sail_no || record.ref_no;
-  byId("boat-summary").textContent = record.class || "Class unavailable";
   byId("certificate-ref").textContent = `RefNo ${record.ref_no}`;
   byId("polar-certificate-ref").textContent = `RefNo ${record.ref_no}`;
   byId("issue-date").textContent = date(record.issue_date);
-  byId("certificate-status").textContent = record.status === "active" ? "Active certificate" : "Archived certificate";
-  byId("official-certificate").href = record.certificate_url;
+  byId("polar-issue-date").textContent = date(record.issue_date);
   bindControls();
   renderGuide();
 };

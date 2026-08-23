@@ -199,17 +199,18 @@ footer {
 .eyebrow { color: var(--accent-dark); font-size: 11px; font-weight: 800; letter-spacing: .12em; margin-bottom: 5px; text-transform: uppercase; }
 
 .performance-controls {
-  align-items: end;
+  align-items: center;
   background: rgb(255 255 255 / 96%);
   border: 1px solid var(--line);
-  box-shadow: 0 10px 30px rgb(16 43 58 / 8%);
-  display: grid;
-  gap: 16px 22px;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
-  margin-bottom: 28px;
-  padding: 18px 20px;
+  border-radius: 999px;
+  box-shadow: 0 7px 22px rgb(16 43 58 / 7%);
+  display: flex;
+  gap: 10px 18px;
+  margin: 0 0 18px auto;
+  padding: 8px 9px 8px 16px;
   position: sticky;
   top: 0;
+  width: fit-content;
   z-index: 20;
 }
 
@@ -221,11 +222,11 @@ footer {
   text-transform: uppercase;
 }
 
-.performance-controls fieldset { border: 0; display: flex; gap: 10px; margin: 0; padding: 0 0 8px; }
-.performance-controls fieldset legend { margin-bottom: 7px; }
+.performance-controls fieldset { align-items: center; border: 0; display: flex; gap: 8px; margin: 0; padding: 0; }
+.performance-controls fieldset legend { float: left; margin-right: 3px; }
 .performance-controls fieldset label { align-items: center; display: flex; gap: 5px; letter-spacing: 0; text-transform: none; }
 .performance-controls input[type="radio"] { accent-color: var(--accent); min-height: 0; min-width: 0; }
-.print-button { background: var(--ink); border: 0; border-radius: 5px; color: #fff; cursor: pointer; font: 750 13px/1 inherit; min-height: 42px; padding: 12px 15px; }
+.print-button { background: var(--ink); border: 0; border-radius: 999px; color: #fff; cursor: pointer; font: 750 12px/1 inherit; min-height: 36px; padding: 10px 14px; }
 .print-button:hover, .print-button:focus-visible { background: var(--accent-dark); }
 .guide-error { background: var(--warning-surface); border-left: 4px solid var(--warning); margin: 40px auto; max-width: 760px; padding: 24px; }
 .guide-error h2 { color: var(--warning-dark); }
@@ -248,19 +249,25 @@ footer {
 .performance-sheet h3 { font-size: 15px; letter-spacing: -.01em; margin: 15px 0 7px; }
 .performance-sheet .table-wrap { overflow-x: auto; }
 .performance-sheet table { min-width: 0; table-layout: fixed; }
-.performance-sheet th { position: static; }
-.performance-sheet th, .performance-sheet td { font-size: 10px; padding: 6px 7px; text-align: right; }
+.performance-sheet th { background: #dce8ec; color: var(--ink); font-size: 14px; font-weight: 850; position: static; }
+.performance-sheet th, .performance-sheet td { padding: 6px 7px; text-align: right; }
+.performance-sheet td { font-size: 10px; }
 .performance-sheet tbody th { text-transform: none; }
+.performance-sheet tbody th { background: #edf3f5; border-right: 2px solid #a9bec7; color: var(--ink); font-size: 13px; font-weight: 850; }
 .performance-sheet th:first-child, .performance-sheet td:first-child { text-align: left; }
-.performance-table { min-width: 1050px !important; }
-.performance-table th, .performance-table td { text-align: center !important; }
-.performance-table th:first-child { text-align: left !important; width: 66px; }
-.performance-table .optimum-heading { width: 138px; }
-.performance-table td strong { font-size: 11px; white-space: nowrap; }
-.performance-table td small { font-size: 8px; margin-top: 2px; white-space: nowrap; }
-.performance-table .optimum-cell small { font-size: 7px; }
-.sheet-note { border-left: 3px solid var(--accent); color: var(--muted); font-size: 9px; margin: 12px 0 0; padding: 6px 8px; }
-.guide-links { padding: 14px 0 0; }
+.optimum-tables { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.performance-sheet caption { background: var(--accent-dark); color: #fff; font-size: 16px; font-weight: 850; letter-spacing: .02em; padding: 8px 10px; text-align: left; }
+.speed-table { min-width: 760px !important; }
+.vmg-table { min-width: 480px !important; }
+.speed-table thead tr:first-child th { background: #cbdde3; }
+.speed-table thead tr:nth-child(2) th { background: #e4edf0; }
+.speed-table th, .speed-table td, .vmg-table th, .vmg-table td { text-align: center !important; }
+.speed-table th:first-child, .vmg-table th:first-child { text-align: left !important; width: 78px; }
+.speed-table tbody td { padding-block: 7px; }
+.speed-table tbody td strong { display: block; font-size: 14px; font-weight: 800; white-space: nowrap; }
+.speed-table tbody td small { color: var(--accent-dark); display: block; font-size: 9px; font-weight: 800; letter-spacing: .03em; margin-top: 2px; white-space: nowrap; }
+.vmg-table tbody td { font-size: 11px; font-weight: 700; padding-block: 6px; }
+.sheet-note { border-left: 3px solid var(--accent); color: var(--muted); display: block; font-size: 9px; margin: 12px 0 0; padding: 6px 8px; }
 .polar-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin: 8px 0 2px; }
 .polar-legend span { align-items: center; color: var(--muted); display: inline-flex; font-size: 10px; gap: 5px; }
 .polar-legend i { border-top: 3px solid; display: inline-block; width: 22px; }
@@ -271,8 +278,6 @@ footer {
 .polar-grid text { fill: var(--muted); font-family: inherit; font-size: 9px; }
 .polar-grid .polar-speed-label { font-size: 8px; }
 .polar-grid .polar-side-label { fill: var(--ink); font-size: 15px; font-weight: 850; letter-spacing: .12em; }
-.polar-grid .polar-wind-label { fill: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
-.polar-wind-arrow { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
 .polar-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .polar-series { opacity: .78; }
 .polar-endpoint { stroke: #fff; stroke-width: 1; }
@@ -284,7 +289,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 @media print {
   :root { color: #0b2432; }
   body { background: #fff; }
-  .screen-only, .site-header, .performance-controls, noscript { display: none !important; }
+  .screen-only, .site-header, .performance-controls, .guide-header, .sheet-note, noscript { display: none !important; }
   .performance-main { margin: 0; max-width: none; padding: 0; }
   #performance-guide { display: block !important; }
   .performance-sheet {
@@ -301,23 +306,21 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
     width: 281mm;
   }
   .performance-sheet:last-child { break-after: auto; page-break-after: auto; }
-  .guide-header { margin-bottom: 1.5mm; padding-bottom: 1.2mm; }
-  .guide-header h2 { font-size: 16pt; }
-  .guide-header p { margin-top: .8mm; }
-  .guide-meta { font-size: 7pt; gap: .8mm; }
   .performance-sheet h3 { font-size: 10pt; margin: 2mm 0 1mm; }
-  .performance-sheet th, .performance-sheet td { font-size: 6.3pt; line-height: 1.05; padding: .65mm 1mm; }
-  .performance-table { min-width: 0 !important; }
-  .performance-table th:first-child { width: 14mm; }
-  .performance-table .optimum-heading { width: 31mm; }
-  .performance-table td strong { font-size: 7pt; }
-  .performance-table td small { font-size: 5.3pt; margin-top: .5mm; }
-  .performance-table .optimum-cell small { font-size: 4.8pt; }
-  .sheet-note { font-size: 6pt; margin-top: 1mm; padding-block: .7mm; }
-  .performance-table-section, .performance-table { break-inside: avoid; page-break-inside: avoid; }
+  .performance-sheet th { font-size: 8.5pt; font-weight: 850; }
+  .performance-sheet th, .performance-sheet td { line-height: 1.05; padding: .65mm 1mm; }
+  .performance-sheet tbody th { border-right-width: .4mm; font-size: 8pt; }
+  .performance-sheet caption { font-size: 9.5pt; padding: 1.1mm 1.7mm; }
+  .speed-table, .vmg-table { min-width: 0 !important; }
+  .speed-table th:first-child, .vmg-table th:first-child { width: 16mm; }
+  .speed-table tbody td { padding-block: .8mm; }
+  .speed-table tbody td strong { font-size: 7.7pt; }
+  .speed-table tbody td small { font-size: 5.3pt; margin-top: .4mm; }
+  .vmg-table tbody td { font-size: 6.7pt; padding-block: .7mm; }
+  .performance-table-section, .speed-table, .vmg-table { break-inside: avoid; page-break-inside: avoid; }
   .polar-chart svg { height: 158mm; margin: 0 auto; width: auto; }
   .polar-legend { margin: 1.5mm 0 0; }
-  .polar-curve, .polar-series, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .performance-sheet th, .performance-sheet caption, .polar-curve, .polar-series, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 
 @media screen and (max-width: 760px) {
@@ -331,8 +334,10 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .summary div { min-width: 0; }
   .filters, .filters label, input, select { width: 100%; }
   .performance-main { padding-inline: 12px; }
-  .performance-controls { grid-template-columns: 1fr; position: static; }
+  .performance-controls { border-radius: 8px; flex-wrap: wrap; justify-content: flex-start; margin-left: 0; position: static; width: 100%; }
+  .performance-controls .print-button { flex-basis: 100%; }
   .performance-sheet { min-height: 0; padding: 20px 14px; }
+  .optimum-tables { grid-template-columns: 1fr; }
   .guide-header { align-items: flex-start; flex-direction: column; }
   .guide-meta { align-items: flex-start; text-align: left; }
 }

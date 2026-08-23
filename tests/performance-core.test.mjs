@@ -93,7 +93,7 @@ test("only TWS converts between knots and metres per second", () => {
 
 test("guide URL state ignores legacy TWS selection and preserves units", () => {
   const initial = new URLSearchParams(
-    "year=2026&country=est&ref=04340004VU1&tws=10&windUnit=ms",
+    "year=2026&country=est&ref=04340004VU1&tws=10&windUnit=ms&angleMode=awa",
   );
   assert.deepEqual(readGuideState(initial), {
     year: "2026",
@@ -106,6 +106,7 @@ test("guide URL state ignores legacy TWS selection and preserves units", () => {
   const written = writeGuideState(initial, {windUnit: "kt"});
   assert.equal(written.has("tws"), false);
   assert.equal(written.get("windUnit"), "kt");
+  assert.equal(written.has("angleMode"), false);
   assert.equal(written.get("ref"), "04340004VU1");
 });
 
@@ -114,7 +115,10 @@ test("guide URL state removes TWS when the optional selection is cleared", () =>
     "year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt",
   );
 
-  const written = writeGuideState(initial, {tws: null, windUnit: "kt"});
+  const written = writeGuideState(initial, {
+    tws: null,
+    windUnit: "kt",
+  });
 
   assert.equal(written.has("tws"), false);
   assert.equal(written.get("ref"), "04340004VU1");

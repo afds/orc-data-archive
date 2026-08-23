@@ -158,6 +158,7 @@ export const readGuideState = (params) => {
 export const writeGuideState = (params, state) => {
   const updated = new URLSearchParams(params);
   updated.delete("tws");
+  updated.delete("angleMode");
   if (["kt", "ms"].includes(state.windUnit)) {
     updated.set("windUnit", state.windUnit);
   }

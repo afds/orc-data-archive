@@ -17,15 +17,14 @@ The example above opens ADELE, EST 467.
 The first printable A4 landscape page prioritizes information that can be used
 while sailing:
 
-- target boat speed, TWA, AWA, and VMG;
-- complete optimum tables for every published TWS;
-- target boat speed at every published TWA, with the corresponding AWA in each
-  cell.
+- optimum beat and run TWA, AWA, boat speed, and VMG for every published TWS;
+- target boat speed at every published TWA, with derived AWA in each cell.
 
 TWS labels can use knots or metres per second; target boat speed and VMG always
-remain in knots. The first page uses one combined table: rows are published TWS
-conditions, fixed TWA values run across the middle, and optimum Beat and Run
-targets form the outer columns.
+remain in knots. Separate Beat and Run tables appear first and show both angle
+systems together. The target-speed table follows, using published TWS rows and
+fixed TWA columns; each cell emphasizes boat speed and displays derived AWA as
+a smaller secondary value.
 
 The second page contains a mirrored speed polar. Apparent-wind angle is plotted
 on the left, true-wind angle on the right, and radial distance is target boat
