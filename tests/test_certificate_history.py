@@ -171,7 +171,7 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertIn('id="polar-issue-date"', page)
             self.assertEqual(
                 2,
-                page.count('<p class="eyebrow">Rating Performance Guide</p>'),
+                page.count('<p class="eyebrow">Performance Guide</p>'),
             )
             self.assertNotIn('id="boat-summary"', page)
             self.assertNotIn('id="certificate-status"', page)

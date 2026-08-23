@@ -112,10 +112,10 @@ path ends in `.pdf`; the archive stores the durable certificate link, not the
 rendered document itself.
 
 The generated `docs/performance/<year>/<country>.json` files are compact,
-append-preserving inputs for the reusable Rating Performance Guide. They retain
+append-preserving inputs for the reusable Performance Guide. They retain
 certificate identity and only the allowance arrays required for target and
 polar calculations. Invalid or incomplete polar matrices are omitted rather
-than converted to zero. See [Rating Performance Guide](performance-guide.md)
+than converted to zero. See [Performance Guide](performance-guide.md)
 for calculations, interpolation, units, and limitations.
 
 Before merging the current feed, the updater reads added certificate records

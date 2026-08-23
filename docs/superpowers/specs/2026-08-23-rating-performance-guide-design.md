@@ -1,4 +1,4 @@
-# Rating Performance Guide design
+# Performance Guide design
 
 ## Purpose
 
@@ -11,7 +11,7 @@ provide a complete target table and a two-sided AWA/TWA polar.
 The first validation certificate is ADELE, EST 467, ORC reference
 `04340004VU1`, from the 2026 Estonian dataset.
 
-The feature is named **Rating Performance Guide**. It must not be presented as
+The feature is named **Performance Guide**. It must not be presented as
 an official ORC Speed Guide: the public archive contains the selected rating
 envelope, but not the individual sail curves, optimizer outputs, or complete
 inputs needed to reproduce ORC's sail-specific product.

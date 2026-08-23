@@ -1,6 +1,6 @@
-# Rating Performance Guide
+# Performance Guide
 
-The generated archive website includes a printable Rating Performance Guide for
+The generated archive website includes a printable Performance Guide for
 archived certificates with a complete public ORC allowance matrix. Open a
 certificate year in the browser and choose **Performance guide**, or use a
 shareable URL directly. If no valid public polar is archived for that
@@ -68,7 +68,7 @@ use true wind referenced at 10 metres above the water.
 
 ## Why this is not an ORC Speed Guide
 
-The feature is deliberately called a **Rating Performance Guide**, not an ORC
+The feature is deliberately called a **Performance Guide**, not an ORC
 Speed Guide. The public RMS feed does not contain enough input or intermediate
 data to reproduce ORC's sail-specific product. In particular, it does not
 provide:

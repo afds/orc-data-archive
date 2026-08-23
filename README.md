@@ -37,9 +37,9 @@ are preserved in the URL, for example:
 https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LAT&status=active&type=club
 ```
 
-## Rating Performance Guide
+## Performance Guide
 
-Certificate rows link to a reusable Rating Performance Guide. It provides
+Certificate rows link to a reusable Performance Guide. It provides
 complete beat and run targets when public polar data is available, a
 boat-speed/AWA table, and a mirrored
 AWA/TWA polar. The two-sheet A4
@@ -54,7 +54,7 @@ https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=0
 
 Only TWS switches between knots and metres per second; target boat speed and
 VMG remain in knots. See the
-[Rating Performance Guide](docs/performance-guide.md) documentation for the
+[Performance Guide](docs/performance-guide.md) documentation for the
 calculation model, sailor-facing guidance, and public-data limitations.
 
 ## Updating
@@ -102,7 +102,7 @@ revision present during at least one successful daily run is retained.
 See [ORC rating-data fields](docs/data-fields.md) for the JSON structure, CSV
 column mappings, units, polar arrays, and national scoring options.
 
-See [Rating Performance Guide](docs/performance-guide.md) for the printable
+See [Performance Guide](docs/performance-guide.md) for the printable
 non-sail-specific polar view, the values derived from the archive, and why the
 public feed cannot reproduce ORC's per-sail Speed Guide.
 

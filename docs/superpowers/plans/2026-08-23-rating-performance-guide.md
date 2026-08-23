@@ -1,8 +1,8 @@
-# Rating Performance Guide Implementation Plan
+# Performance Guide Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a reusable, shareable, two-page printable Rating Performance Guide backed by compact archived polar data, validated with ADELE EST 467.
+**Goal:** Build a reusable, shareable, two-page printable Performance Guide backed by compact archived polar data, validated with ADELE EST 467.
 
 **Architecture:** Extend the deterministic Python site generator to preserve a compact polar record per certificate in country/year JSON. A standalone browser page loads one record by URL and delegates all numerical work to a dependency-free ES module, while DOM code renders the cockpit tables and mirrored SVG polar. Existing archive pages link into the reusable guide only for certificates with valid polar data.
 
@@ -17,7 +17,7 @@
 
 ## Global Constraints
 
-- Name the feature **Rating Performance Guide**, never **ORC Speed Guide**.
+- Name the feature **Performance Guide**, never **ORC Speed Guide**.
 - Generate one reusable page plus `docs/performance/<year>/<country>.json`; do not generate per-certificate HTML.
 - Keep all internal TWS values in knots and convert TWS display with `1 kt = 0.514444 m/s`.
 - Target boat speed and VMG always remain knots.
