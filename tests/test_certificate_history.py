@@ -63,12 +63,18 @@ class CertificateHistoryTests(unittest.TestCase):
         incomplete["Allowances"]["R60"] = [576.7]
         non_finite = polar_boat("INFINITE")
         non_finite["Allowances"]["Beat"][0] = float("inf")
+        impossible_angles = polar_boat("ANGLES")
+        impossible_angles["Allowances"]["BeatAngle"][0] = 95
+        impossible_angles["Allowances"]["GybeAngle"][0] = 85
 
         self.assertIsNone(
             extract_performance_record(2026, "EST", incomplete, "active")
         )
         self.assertIsNone(
             extract_performance_record(2026, "EST", non_finite, "active")
+        )
+        self.assertIsNone(
+            extract_performance_record(2026, "EST", impossible_angles, "active")
         )
 
     def test_generates_and_preserves_compact_performance_records(self):

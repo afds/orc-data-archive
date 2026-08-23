@@ -104,12 +104,20 @@ and certificate links remain in the history.
 | `status` | `active` while present in the feed, otherwise `archived`. |
 | `removed_on` | First successful archive date on which the reference was absent. |
 | `certificate_url` | Stable ORC certificate-renderer URL derived from `ref_no`. |
+| `performance_url` | Relative Rating Performance Guide URL when a valid archived polar is available. |
 
 Removal status is updated only after the deletion guard accepts the full run.
 A country not advertised during a run is left unchanged rather than treating
 all of its certificates as removed. ORC may serve printable HTML at a URL whose
 path ends in `.pdf`; the archive stores the durable certificate link, not the
 rendered document itself.
+
+The generated `docs/performance/<year>/<country>.json` files are compact,
+append-preserving inputs for the reusable Rating Performance Guide. They retain
+certificate identity and only the allowance arrays required for target and
+polar calculations. Invalid or incomplete polar matrices are omitted rather
+than converted to zero. See [Rating Performance Guide](performance-guide.md)
+for calculations, interpolation, units, and limitations.
 
 Before merging the current feed, the updater reads added certificate records
 from committed `data/**/*.json` patches. This backfills references observed

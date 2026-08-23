@@ -310,8 +310,8 @@ const selectTws = (tws) => {
     const condition = conditionAtTws(record.allowances, tws);
     state.tws = tws;
     setInputFromCanonical();
-    renderPresets();
     renderGuide(condition);
+    renderPresets();
   } catch (error) {
     const minimum = formatWindSpeed(record.allowances.wind_speeds[0], state.windUnit);
     const maximum = formatWindSpeed(record.allowances.wind_speeds.at(-1), state.windUnit);

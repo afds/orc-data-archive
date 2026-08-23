@@ -37,6 +37,26 @@ are preserved in the URL, for example:
 https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LAT&status=active&type=club
 ```
 
+## Rating Performance Guide
+
+Certificates with a complete public ORC allowance matrix link to a reusable
+Rating Performance Guide. It provides selected-wind beat and run targets, a
+complete boat-speed/AWA table, and a mirrored AWA/TWA polar. The two-sheet A4
+landscape layout can be printed directly or saved as PDF.
+
+Guide state is shareable by VPP year, country, ORC reference, TWS, and wind
+unit. For example, ADELE (EST 467) at 10 kt uses:
+
+```text
+https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt
+```
+
+Only TWS switches between knots and metres per second; target boat speed and
+VMG remain in knots. Arbitrary TWS values inside the published range are
+interpolated and labeled accordingly. See the
+[Rating Performance Guide](docs/performance-guide.md) documentation for the
+calculation model, sailor-facing guidance, and public-data limitations.
+
 ## Updating
 
 Run the updater with Python 3.11 or newer; it has no third-party dependencies:
@@ -82,9 +102,9 @@ revision present during at least one successful daily run is retained.
 See [ORC rating-data fields](docs/data-fields.md) for the JSON structure, CSV
 column mappings, units, polar arrays, and national scoring options.
 
-See [Performance guide feasibility](docs/performance-guide.md) for the proposed
-future non-sail-specific polar view, the values that can be derived from the
-archive, and why the public feed cannot reproduce ORC's per-sail Speed Guide.
+See [Rating Performance Guide](docs/performance-guide.md) for the printable
+non-sail-specific polar view, the values derived from the archive, and why the
+public feed cannot reproduce ORC's per-sail Speed Guide.
 
 The original payloads are preserved semantically, including every boat field.
 For stable, reviewable diffs, JSON boats and object keys are sorted and each

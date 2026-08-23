@@ -341,7 +341,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .target-matrix td small { font-size: 6.5pt; }
   .sheet-note { font-size: 6.5pt; margin-top: 2mm; padding-block: 1mm; }
   .matrix-section, #target-matrix { break-inside: avoid; page-break-inside: avoid; }
-  .polar-chart svg { height: 142mm; margin: 0 auto; width: auto; }
+  .polar-chart svg { height: 125mm; margin: 0 auto; width: auto; }
   .polar-legend { margin: 1.5mm 0 0; }
   .polar-curve, .polar-series, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .reading-guide { margin-top: 1mm; padding: 2mm 3mm; }

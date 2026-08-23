@@ -109,6 +109,10 @@ def extract_performance_record(
         if not positive and any(angle < 0 or angle > 180 for angle in values):
             return None
         series[target] = values
+    if any(angle >= 90 for angle in series["beat_angle"]):
+        return None
+    if any(angle <= 90 for angle in series["gybe_angle"]):
+        return None
 
     fixed = {}
     for angle in wind_angles:

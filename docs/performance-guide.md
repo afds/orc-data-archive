@@ -1,84 +1,93 @@
-# Performance guide feasibility
+# Rating Performance Guide
 
-This note records the likely direction for a future performance view in the
-generated website. It is a design note, not a commitment to implement the
-feature.
+The generated archive website includes a printable Rating Performance Guide for
+every archived certificate with a complete public ORC allowance matrix. Open a
+certificate year in the browser and choose **Performance guide**, or use a
+shareable URL directly:
 
-## Proposed direction
+```text
+https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt
+```
 
-Generate a general, non-sail-specific polar for each archived certificate from
-the public RMS allowance data. The feature should be described as a
-**Performance Guide** or **Rating Polar**, not as an ORC Speed Guide.
+The example above opens ADELE, EST 467.
 
-A future certificate view could include:
+## Cockpit reference
 
-- a true-wind-angle polar across the available true wind speeds
-- optimum beat and run angles and speeds
-- a numeric target table with boat speed and VMG
-- derived apparent wind angle and apparent wind speed
-- certificate identity and maximum rated sail areas
-- a printable layout and downloadable tabular data
-- shareable URL state containing at least VPP year, country, and ORC reference
+The first printable A4 landscape page prioritizes information that can be used
+while sailing:
 
-An SVG chart with a semantic HTML table fallback would keep the output crisp in
-print, usable on mobile, and accessible without requiring a charting framework.
-A reusable page backed by compact generated country/year data is preferable to
-generating thousands of nearly identical HTML files.
+- selected-wind optimum beat and run targets;
+- target boat speed, TWA, AWA, and VMG;
+- complete optimum tables for every published TWS;
+- target boat speed at every published TWA, with the corresponding AWA in each
+  cell.
 
-## What the archive can calculate
+TWS can be selected at a published value or anywhere between the certificate's
+minimum and maximum. Values between published points are labeled as
+interpolated. The TWS control and headings can use knots or metres per second;
+target boat speed and VMG always remain in knots.
+
+The second page contains a mirrored speed polar. Apparent-wind angle is plotted
+on the left, true-wind angle on the right, and radial distance is target boat
+speed in knots. It includes all published TWS curves, highlights the selected
+condition, and marks optimum beat and run endpoints.
+
+## Calculations
 
 The JSON `Allowances` object contains time allowances in seconds per nautical
 mile for fixed true-wind angles, optimum beat and run, and a series of true wind
-speeds. The corresponding predicted boat speed is:
+speeds.
+
+At a fixed angle, predicted boat speed is:
 
 ```text
 boat speed (kt) = 3600 / allowance (s/NM)
 ```
 
-VMG can be calculated from boat speed and true wind angle. Apparent wind angle
-and speed can be derived from the true-wind vector and predicted boat speed.
+For optimum beat and run, `3600 / allowance` is VMG along the wind axis. Target
+boat speed is recovered from VMG and the optimum angle. Apparent wind is then
+derived from the TWS, TWA, and target boat-speed vectors using the relation
+documented by ORC.
+
+For an arbitrary TWS, the guide linearly interpolates fixed-angle boat speed,
+optimum VMG, and optimum angles between adjacent published conditions, then
+recalculates boat speed and AWA. It never extrapolates beyond the published
+range.
+
 See [ORC rating-data fields](data-fields.md#polar-and-selected-course-allowances)
 for the archived arrays and their units.
 
-These values describe the best rated performance selected by the ORC VPP at
-each published condition. They are suitable for a general polar, subject to the
-normal limitation that this is theoretical rating data rather than measured
-on-water performance.
+## How to interpret the targets
 
-## Why exact per-sail curves cannot be reconstructed
+AWA is the wind angle commonly felt by the crew and displayed by onboard
+instruments. TWA describes the course relative to the underlying true wind.
+Optimum beat and run angles maximize VMG toward a windward or leeward mark.
 
-ORC's public VPP documentation explains the overall calculation and publishes
-many aerodynamic equations and coefficient tables. At each wind condition the
-VPP evaluates eligible sail configurations, solves aerodynamic and hydrodynamic
-equilibrium, optimizes controls such as reef and flat, and retains the fastest
-result.
+These are theoretical ORC VPP rating targets, not measurements of a particular
+crew or day. Sea state, wind shear, sail condition, crew execution, and
+instrument calibration can all change achievable performance. ORC predictions
+use true wind referenced at 10 metres above the water.
 
-The public RMS feed does not contain enough input or intermediate data to repeat
-that process. In particular, it does not provide:
+## Why this is not an ORC Speed Guide
 
-- the complete individual sail inventory and all sail measurements
-- hull offsets and the complete hydrodynamic and stability model inputs
-- the result of each candidate sail configuration before ORC selects the best
-- heel, reef, flat, and other intermediate optimizer outputs
-- the canonical VPP implementation
+The feature is deliberately called a **Rating Performance Guide**, not an ORC
+Speed Guide. The public RMS feed does not contain enough input or intermediate
+data to reproduce ORC's sail-specific product. In particular, it does not
+provide:
 
-The archived allowance is therefore an upper envelope of candidate sail
-configurations. Once only the winning value is published, the curves of the
-other sails cannot be uniquely recovered: many different sets of per-sail
-curves could produce the same envelope.
+- the complete individual sail inventory and all sail measurements;
+- hull offsets and the complete hydrodynamic and stability model inputs;
+- each candidate sail configuration before ORC selects the best result;
+- heel, reef, flat, and other optimizer outputs;
+- the canonical VPP implementation.
 
-Implementing the formulas in the public documentation would be a new VPP
-implementation rather than a simple inversion of the RMS data. It would also
-require measurement inputs that this archive does not possess and extensive
-validation against official results.
+The archived allowance is an upper envelope of the configurations selected by
+the VPP. Once only the winning value is published, the curves of the other sails
+cannot be recovered uniquely. The archive therefore displays a general rating
+polar without assigning curves to sails.
 
-## Future support for official Speed Guides
-
-If an official Speed Guide is available for a certificate, its machine-readable
-tables could be archived and presented as an additional, explicitly sourced
-view. This would preserve genuine per-sail curves without inferring them from
-the general RMS polar. Availability, redistribution rights, and stable download
-access would need to be established before automating collection.
+If an official Speed Guide is available for a certificate, it remains the
+authoritative source for sail-specific curves and trim guidance.
 
 ## References
 
