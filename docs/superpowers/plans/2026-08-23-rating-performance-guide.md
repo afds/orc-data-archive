@@ -197,13 +197,13 @@ test("ADELE 10 kt beat and run targets", () => {
   assert.equal(condition.beat.awa.toFixed(1), "25.3");
   assert.equal(condition.run.vmg.toFixed(2), "5.36");
   assert.equal(condition.run.boatSpeed.toFixed(2), "6.04");
-  assert.equal(condition.run.awa.toFixed(1), "121.4");
+  assert.equal(condition.run.awa.toFixed(1), "121.5");
 });
 
 test("fixed 10 kt 52 degree target", () => {
   const condition = publishedCondition(adeleAllowances, 3);
   assert.equal(condition.fixed[0].boatSpeed.toFixed(2), "6.57");
-  assert.equal(condition.fixed[0].awa.toFixed(1), "31.6");
+  assert.equal(condition.fixed[0].awa.toFixed(1), "31.8");
 });
 ```
 
@@ -486,7 +486,7 @@ Verify from generated data and rendered output:
 
 - identity is ADELE / EST 467 / First 34.7 / `04340004VU1`;
 - 10 kt beat target is approximately 5.9 kt boat speed, 40.0° TWA, 25.3° AWA, and 4.5 kt VMG;
-- 10 kt run target is approximately 6.0 kt boat speed, 152.5° TWA, 121.4° AWA, and 5.4 kt VMG;
+- 10 kt run target is approximately 6.0 kt boat speed, 152.5° TWA, 121.5° AWA, and 5.4 kt VMG;
 - the fixed-angle matrix contains both target speed and AWA;
 - 11 kt is visibly interpolated;
 - changing TWS display to m/s does not change boat-speed or VMG units;
