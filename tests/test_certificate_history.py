@@ -309,6 +309,17 @@ class CertificateHistoryTests(unittest.TestCase):
                     page,
                 )
 
+    def test_mobile_layout_rules_do_not_apply_while_printing(self):
+        stylesheet = (
+            Path(__file__).resolve().parents[1] / "docs" / "assets" / "site.css"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("@media screen and (max-width: 760px)", stylesheet)
+        self.assertIn(
+            ".performance-sheet tbody th { text-transform: none; }",
+            stylesheet,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

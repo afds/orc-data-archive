@@ -270,13 +270,14 @@ footer {
 .performance-sheet table { min-width: 0; table-layout: fixed; }
 .performance-sheet th { position: static; }
 .performance-sheet th, .performance-sheet td { font-size: 10px; padding: 6px 7px; text-align: right; }
+.performance-sheet tbody th { text-transform: none; }
 .performance-sheet th:first-child, .performance-sheet td:first-child { text-align: left; }
 .performance-sheet caption { color: var(--ink); font-size: 12px; font-weight: 780; padding: 0 0 5px; text-align: left; }
 .performance-sheet [data-selected="true"] { background: #dff1ee; color: #064f58; }
 .matrix-section > p { color: var(--muted); font-size: 10px; margin-bottom: 6px; }
 .target-matrix th, .target-matrix td { text-align: center !important; }
 .target-matrix th:first-child { text-align: left !important; width: 56px; }
-.target-matrix th span { display: block; white-space: nowrap; }
+.target-matrix th span { display: block; text-transform: none; white-space: nowrap; }
 .target-matrix th small { color: inherit; display: block; font-size: 7px; letter-spacing: 0; margin-top: 2px; text-transform: none; }
 .target-matrix td strong { font-size: 11px; white-space: nowrap; }
 .target-matrix td small { font-size: 8px; margin-top: 2px; white-space: nowrap; }
@@ -328,18 +329,25 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
     width: 281mm;
   }
   .performance-sheet:last-child { break-after: auto; page-break-after: auto; }
-  .guide-header { margin-bottom: 3mm; padding-bottom: 2mm; }
-  .guide-header h2 { font-size: 19pt; }
+  .guide-header { margin-bottom: 1.5mm; padding-bottom: 1.2mm; }
+  .guide-header h2 { font-size: 16pt; }
+  .guide-header p { margin-top: .8mm; }
+  .guide-meta { font-size: 7pt; gap: .8mm; }
+  .selected-summary { font-size: 9pt; margin: 1.5mm 0; }
   .target-cards { gap: 3mm; }
-  .target-card { padding: 2.5mm 3mm; }
-  .target-speed { font-size: 19pt; }
-  .target-details { margin-top: 1mm; }
-  .performance-sheet h3 { margin: 3mm 0 1.5mm; }
-  .performance-sheet th, .performance-sheet td { font-size: 7.5pt; padding: 1.2mm 1.5mm; }
-  .performance-sheet caption { font-size: 8.5pt; }
-  .target-matrix td strong { font-size: 8pt; }
-  .target-matrix td small { font-size: 6.5pt; }
-  .sheet-note { font-size: 6.5pt; margin-top: 2mm; padding-block: 1mm; }
+  .target-card { padding: 1.2mm 2mm; }
+  .target-label { font-size: 8pt; }
+  .target-speed { font-size: 15pt; }
+  .target-details { gap: 8mm; margin-top: .5mm; }
+  .target-details dt { font-size: 6pt; }
+  .target-details dd { font-size: 8pt; }
+  .performance-sheet h3 { font-size: 10pt; margin: 2mm 0 1mm; }
+  .performance-sheet th, .performance-sheet td { font-size: 6.3pt; line-height: 1.05; padding: .65mm 1mm; }
+  .performance-sheet caption { font-size: 7pt; padding-bottom: .7mm; }
+  .matrix-section > p { font-size: 6.5pt; margin: 0 0 1mm; }
+  .target-matrix td strong { font-size: 7pt; }
+  .target-matrix td small { font-size: 5.5pt; margin-top: .5mm; }
+  .sheet-note { font-size: 6pt; margin-top: 1mm; padding-block: .7mm; }
   .matrix-section, #target-matrix { break-inside: avoid; page-break-inside: avoid; }
   .polar-chart svg { height: 125mm; margin: 0 auto; width: auto; }
   .polar-legend { margin: 1.5mm 0 0; }
@@ -348,7 +356,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .guide-links { padding-top: 2mm; }
 }
 
-@media (max-width: 760px) {
+@media screen and (max-width: 760px) {
   .site-header, main { padding-inline: 18px; }
   .site-header, .home-intro, .year-intro, .section-title, .browser-heading, footer { align-items: flex-start; flex-direction: column; }
   .home-intro, .year-intro { gap: 30px; padding: 52px 0 40px; }
