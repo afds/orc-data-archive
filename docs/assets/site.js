@@ -108,16 +108,19 @@
     row.append(statusCell);
 
     const certificate = document.createElement("td");
-    if (record.performance_url) {
-      const performance = element("a", "Performance guide", "performance-link");
-      performance.href = record.performance_url;
-      certificate.append(performance);
-    }
     const link = element("a", "Open certificate", "certificate-link");
     link.href = record.certificate_url;
     link.target = "_blank";
     link.rel = "noopener";
     certificate.append(link, element("small", record.ref_no));
+    const performance = element("a", "Performance guide", "performance-link");
+    const performanceParams = new URLSearchParams({
+      year: record.vpp_year,
+      country: record.country,
+      ref: record.ref_no,
+    });
+    performance.href = `../../performance/?${performanceParams}`;
+    certificate.append(performance);
     row.append(certificate);
     return row;
   };

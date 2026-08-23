@@ -3,9 +3,9 @@
 ## Purpose
 
 Add a reusable, printable performance view to the generated archive website.
-For a selected certificate and true wind speed (TWS), a sailor should be able
-to find the target boat speed, best upwind and downwind angles in both true and
-apparent wind, and target velocity made good (VMG). The same view should also
+For a selected certificate, a sailor should be able to find target boat speed,
+best upwind and downwind angles in both true and apparent wind, and target
+velocity made good (VMG) for every published TWS. The same view should also
 provide a complete target table and a two-sided AWA/TWA polar.
 
 The first validation certificate is ADELE, EST 467, ORC reference
@@ -28,17 +28,16 @@ The canonical page URL is:
 /performance/?year=2026&country=EST&ref=04340004VU1
 ```
 
-Optional URL parameters preserve the selected wind state:
+An optional URL parameter preserves the wind unit:
 
 ```text
-&tws=10&windUnit=kt
+&windUnit=kt
 ```
 
-`tws` is stored canonically in knots even when `windUnit=ms`. This keeps shared
-URLs stable across display-unit changes.
-
-The certificate browser adds a **Performance guide** link only when that
-certificate has a valid polar record.
+The certificate browser derives a **Performance guide** link for every row from
+VPP year, country, and RefNo. It does not persist a derived URL or availability
+flag in certificate CSV. A missing polar is handled by the guide's runtime
+unavailable state.
 
 ## Generated performance data
 
@@ -70,8 +69,9 @@ Before publishing a record, validate that:
 - all allowance values are finite and greater than zero;
 - all beat and gybe angles are finite and lie between 0 and 180 degrees.
 
-An invalid or incomplete record is omitted from performance output and receives
-no performance link. Missing values are never converted to zero.
+An invalid or incomplete record is omitted from performance output. Missing
+values are never converted to zero; a link for such a certificate resolves to
+the guide's runtime unavailable state.
 
 The JSON is deterministic: records and object keys use stable ordering, and
 rendering ends with one newline.
@@ -123,19 +123,11 @@ Normalize AWA into the inclusive 0–180 degree range. AWA is shown because it i
 the wind direction observed aboard the boat. AWS may be calculated internally
 but is outside the first version's printed tables.
 
-### Arbitrary wind speeds
+### Published wind speeds
 
-Allow selection of any finite TWS within the certificate's published minimum
-and maximum. Do not extrapolate beyond that interval.
-
-For a TWS between two published values:
-
-- linearly interpolate each fixed-angle target boat speed;
-- linearly interpolate beat VMG, run VMG, BeatAngle, and GybeAngle;
-- recalculate optimum boat speeds and every AWA from the interpolated values.
-
-Label interpolated results visibly. Exact published wind speeds are not labeled
-as interpolated.
+Expose all of the certificate's published TWS conditions without a selection
+control. Legacy `tws` URL parameters are ignored and removed when state is
+synchronized.
 
 ### Units and rounding
 
@@ -148,8 +140,8 @@ labels with:
 
 The unit control changes TWS only. Target boat speed and VMG always remain in
 knots. Display speeds to one decimal place and angles to one decimal place in
-the selected-condition cards and optimum tables. The dense matrix may display
-AWA as whole degrees for scanability. Calculations retain unrounded values.
+the optimum tables. The dense matrix may display AWA as whole degrees for
+scanability. Calculations retain unrounded values.
 
 ## Sailor-facing page
 
@@ -158,16 +150,12 @@ for printing.
 
 The control bar contains:
 
-- numeric TWS input;
-- quick choices for the certificate's published wind speeds;
 - a `kt` / `m/s` segmented control affecting wind-speed values only;
 - a **Print / Save as PDF** action.
 
-Changing a control updates the URL without navigating. The selected TWS is
-validated in both display units and converted to canonical knots before any
-calculation.
+Changing the unit updates the URL without navigating.
 
-The header identifies the yacht, sail number, class, VPP year, issue date, and
+The header identifies the yacht, sail number, class, issue date, and
 certificate status. It links back to the certificate archive and to the
 official certificate.
 
@@ -176,19 +164,11 @@ official certificate.
 Print the first sheet in A4 landscape orientation. It contains, in priority
 order:
 
-1. Two large selected-condition cards: optimum beat and optimum run. Each card
-   shows target boat speed, TWA, AWA, and target VMG.
-2. Complete published beat and run tables. They include TWS, TWA, AWA, target
-   boat speed, and VMG. Separate upwind and downwind groups keep the tables
-   readable.
-3. A fixed-TWA matrix. Rows are the published true-wind angles and columns are
-   the published true-wind speeds. Each cell stacks target boat speed in larger
-   type over derived AWA in smaller type.
-
-The selected TWS column is emphasized. If it is interpolated, insert an
-emphasized selected column in addition to the published columns and mark it as
-interpolated. The landscape layout must remain legible with this additional
-column.
+1. One combined target table whose rows are published TWS conditions.
+2. The first and last data columns are optimum Beat and Run targets, each
+   showing boat speed, TWA, AWA, and VMG.
+3. The middle columns are the published fixed TWA values, with each cell
+   stacking target boat speed over derived AWA.
 
 ### Page 2: dual-angle polar
 
@@ -203,8 +183,6 @@ Follow the useful convention in ORC's Speed Guide explanation:
 - the left half plots the corresponding derived apparent-wind angles;
 - radial distance is target boat speed in knots, with a labeled one-knot scale;
 - one curve is drawn for each published TWS;
-- the selected curve is emphasized, including a separately drawn interpolated
-  curve when needed;
 - optimum beat and run endpoints are visibly marked.
 
 Construct each curve from the optimum beat point, the published fixed-angle
@@ -213,7 +191,9 @@ and must not imply sail-specific crossover curves. Use a print-safe palette and
 line-style differences so the chart remains understandable in grayscale.
 
 The chart legend displays TWS in the selected wind unit. Boat-speed radial
-labels always remain knots.
+labels always remain knots. The wind-flow arrow points from 0 toward 180
+degrees. The yacht and sail number use the same compact hierarchy on both
+pages.
 
 ## Guidance and provenance
 
@@ -234,10 +214,9 @@ ORC's Speed Guide explanation.
 
 ## Accessibility and responsive behavior
 
-The target tables are the semantic source of truth. The SVG polar supplements
-them and has an accessible name and description. Controls have explicit labels,
-keyboard focus styles, and status updates for selection or errors. Do not rely
-on color alone to distinguish curves or selected values.
+The target table is the semantic source of truth. The SVG polar supplements it
+and has an accessible name and description. Controls have explicit labels and
+keyboard focus styles. Do not rely on color alone to distinguish curves.
 
 On narrow screens, controls and target cards stack, tables scroll horizontally,
 and the polar scales to the viewport. Printing always uses the two-page A4
@@ -280,7 +259,7 @@ Python unit tests cover:
 - extraction and strict polar validation;
 - deterministic compact JSON;
 - preservation of removed and historical references;
-- omission of invalid polars and their browser links;
+- omission of invalid polars and runtime handling for their derived links;
 - generated performance page and ADELE-style URLs.
 
 Dependency-free JavaScript tests, run with Node's built-in test runner, cover:

@@ -39,21 +39,20 @@ https://bitblit.eu/orc-data-archive/certificates/2026/?search=LAT-790&country=LA
 
 ## Rating Performance Guide
 
-Certificates with a complete public ORC allowance matrix link to a reusable
-Rating Performance Guide. It provides selected-wind beat and run targets, a
-complete boat-speed/AWA table, and a mirrored AWA/TWA polar. The two-sheet A4
+Certificate rows link to a reusable Rating Performance Guide. It provides
+complete beat and run targets when public polar data is available, a
+boat-speed/AWA table, and a mirrored AWA/TWA polar. The two-sheet A4
 landscape layout can be printed directly or saved as PDF.
 
-Guide state is shareable by VPP year, country, ORC reference, TWS, and wind
-unit. For example, ADELE (EST 467) at 10 kt uses:
+Guide state is shareable by VPP year, country, ORC reference, and wind unit.
+For example, ADELE (EST 467) uses:
 
 ```text
-https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt
+https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&windUnit=kt
 ```
 
 Only TWS switches between knots and metres per second; target boat speed and
-VMG remain in knots. Arbitrary TWS values inside the published range are
-interpolated and labeled accordingly. See the
+VMG remain in knots. See the
 [Rating Performance Guide](docs/performance-guide.md) documentation for the
 calculation model, sailor-facing guidance, and public-data limitations.
 

@@ -10,6 +10,11 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-23-rating-performance-guide-design.md`
 
+> **Revision:** The shipped follow-up removes TWS selection and interpolation
+> from the UI, merges the three target tables into one TWS-row table, and
+> derives guide links at runtime without a CSV URL or availability field. The
+> task transcript below records the original implementation sequence.
+
 ## Global Constraints
 
 - Name the feature **Rating Performance Guide**, never **ORC Speed Guide**.

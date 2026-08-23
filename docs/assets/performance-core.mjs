@@ -115,6 +115,7 @@ export const matrixConditions = (allowances, selectedTws) => {
   const published = allowances.wind_speeds.map((_, index) => (
     publishedCondition(allowances, index)
   ));
+  if (!Number.isFinite(selectedTws)) return published;
   if (allowances.wind_speeds.includes(selectedTws)) return published;
   const selected = conditionAtTws(allowances, selectedTws);
   return [...published, selected].sort((left, right) => left.tws - right.tws);
@@ -145,20 +146,18 @@ export const formatWindSpeed = (twsKnots, unit) => {
 };
 
 export const readGuideState = (params) => {
-  const rawTws = params.get("tws");
-  const tws = rawTws === null || rawTws.trim() === "" ? null : Number(rawTws);
   return {
     year: params.get("year") ?? "",
     country: (params.get("country") ?? "").toUpperCase(),
     ref: params.get("ref") ?? "",
-    tws: Number.isFinite(tws) ? tws : null,
+    tws: null,
     windUnit: params.get("windUnit") === "ms" ? "ms" : "kt",
   };
 };
 
 export const writeGuideState = (params, state) => {
   const updated = new URLSearchParams(params);
-  if (Number.isFinite(state.tws)) updated.set("tws", String(state.tws));
+  updated.delete("tws");
   if (["kt", "ms"].includes(state.windUnit)) {
     updated.set("windUnit", state.windUnit);
   }

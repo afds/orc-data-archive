@@ -29,7 +29,6 @@ HISTORY_FIELDS = (
     "status",
     "removed_on",
     "certificate_url",
-    "performance_url",
 )
 CERTIFICATE_URL = "https://data.orc.org/public/WPub.dll/CC/{ref_no}.pdf"
 SAILOR_SERVICES_URL = "https://orc.org/sailors/sailor-services"
@@ -39,13 +38,6 @@ ACTIVE_CERTIFICATES_URL = "https://orc.org/sailors/active-certificates-database"
 def certificate_url(ref_no: str) -> str:
     encoded = urllib.parse.quote(ref_no, safe="")
     return CERTIFICATE_URL.format(ref_no=encoded)
-
-
-def performance_url(year: int, country: str, ref_no: str) -> str:
-    query = urllib.parse.urlencode(
-        {"year": year, "country": country, "ref": ref_no}
-    )
-    return f"../../performance/?{query}"
 
 
 def _text(value: object) -> str:
@@ -171,7 +163,6 @@ def _active_record(
         "status": "active",
         "removed_on": "",
         "certificate_url": certificate_url(ref_no),
-        "performance_url": "",
     }
 
 
@@ -180,9 +171,7 @@ def _load_history(path: Path, year: int) -> dict[str, dict[str, str]]:
         return {}
     with path.open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source)
-        missing = set(HISTORY_FIELDS) - {"performance_url"} - set(
-            reader.fieldnames or ()
-        )
+        missing = set(HISTORY_FIELDS) - set(reader.fieldnames or ())
         if missing:
             raise ValueError(f"{path} is missing history fields: {sorted(missing)}")
         records = {}
@@ -269,18 +258,13 @@ def _render_performance_page() -> bytes:
   <section class="performance-controls screen-only" id="performance-controls" aria-labelledby="controls-heading">
     <div>
       <p class="eyebrow">Rating Performance Guide</p>
-      <h1 id="controls-heading">Configure cockpit reference</h1>
+      <h1 id="controls-heading">Configure reference</h1>
     </div>
-    <label for="tws-input">True wind speed
-      <span class="wind-input"><input id="tws-input" type="number" inputmode="decimal"><span id="tws-unit-label">kt</span></span>
-    </label>
     <fieldset id="wind-unit"><legend>Wind unit</legend>
       <label><input type="radio" name="wind-unit" value="kt" checked> knots</label>
       <label><input type="radio" name="wind-unit" value="ms"> m/s</label>
     </fieldset>
-    <div><span class="control-label">Published TWS</span><div class="wind-presets" id="wind-presets"></div></div>
     <button class="print-button" id="print-guide" type="button">Print / Save as PDF</button>
-    <p class="control-status" id="control-status" aria-live="polite"></p>
   </section>
 
   <section class="guide-error screen-only" id="guide-error" role="alert" hidden>
@@ -295,22 +279,15 @@ def _render_performance_page() -> bytes:
         <div><p class="eyebrow">Rating Performance Guide</p><h2 id="guide-title"><span id="yacht-name"></span> <small id="sail-number"></small></h2><p id="boat-summary"></p></div>
         <div class="guide-meta"><span id="certificate-ref"></span><span id="issue-date"></span><span id="certificate-status"></span></div>
       </header>
-      <div class="selected-summary" id="selected-summary"><span id="selected-tws"></span><span id="interpolated-badge" hidden>Interpolated</span></div>
-      <div class="target-cards"><article class="target-card target-beat" id="beat-card"></article><article class="target-card target-run" id="run-card"></article></div>
-      <section class="optimum-section" aria-labelledby="optimum-heading"><h3 id="optimum-heading">Best VMG targets</h3><div class="optimum-tables">
-        <div class="table-wrap"><table><caption>Upwind targets</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Boat speed</th><th scope="col">VMG</th></tr></thead><tbody id="beat-targets"></tbody></table></div>
-        <div class="table-wrap"><table><caption>Downwind targets</caption><thead><tr><th scope="col">TWS</th><th scope="col">TWA</th><th scope="col">AWA</th><th scope="col">Boat speed</th><th scope="col">VMG</th></tr></thead><tbody id="run-targets"></tbody></table></div>
-      </div></section>
-      <section class="matrix-section" aria-labelledby="matrix-heading"><h3 id="matrix-heading">Target boat speed by true-wind angle</h3><p>Large values are target boat speed in knots; smaller values are apparent wind angle.</p><div class="table-wrap"><table class="target-matrix" id="target-matrix"><thead><tr id="matrix-head"><th scope="col">TWA</th></tr></thead><tbody id="matrix-body"></tbody></table></div></section>
+      <section class="performance-table-section" aria-labelledby="matrix-heading"><h3 id="matrix-heading">Target boat speed</h3><div class="table-wrap"><table class="performance-table"><thead id="performance-head"></thead><tbody id="performance-body"></tbody></table></div></section>
       <p class="sheet-note">Theoretical ORC VPP rating targets. Actual performance varies with sea state, wind shear, crew execution, and instrument calibration.</p>
     </section>
 
     <section class="performance-sheet polar-sheet" id="polar-sheet" aria-labelledby="polar-heading">
-      <header class="guide-header"><div><p class="eyebrow">Rating Performance Guide</p><h2 id="polar-heading">Dual-angle speed polar</h2><p id="polar-boat-name"></p></div><div class="guide-meta"><span id="polar-certificate-ref"></span><span>AWA left · TWA right</span><span>Boat speed radial scale in knots</span></div></header>
+      <header class="guide-header"><div><p class="eyebrow">Dual-angle speed polar</p><h2 id="polar-heading"><span id="polar-yacht-name"></span> <small id="polar-sail-number"></small></h2></div><div class="guide-meta"><span id="polar-certificate-ref"></span></div></header>
       <div class="polar-legend" id="polar-legend" aria-label="True wind speed curves"></div>
       <div class="polar-chart" id="polar-chart"></div>
-      <aside class="reading-guide"><h3>Using this guide</h3><p><strong>AWA</strong> is the wind angle commonly felt and displayed aboard. <strong>TWA</strong> describes the course relative to true wind. Optimum beat and run angles maximize VMG toward a windward or leeward mark.</p><p>ORC predictions use wind referenced at 10 metres above the water. This independent rating polar is not an official ORC Speed Guide and does not identify individual sail choices.</p></aside>
-      <footer class="guide-links"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="https://github.com/afds/orc-data-archive/blob/main/docs/data-fields.md">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
+      <footer class="guide-links screen-only"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="https://github.com/afds/orc-data-archive/blob/main/docs/data-fields.md">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
     </section>
   </div>
   <noscript><p class="guide-error">JavaScript is required to calculate and display this performance guide.</p></noscript>
@@ -577,9 +554,6 @@ def build_history_site(
             historical = history.get(ref_no)
             if historical is not None:
                 compact["status"] = historical["status"]
-                historical["performance_url"] = performance_url(
-                    year, country, ref_no
-                )
 
     years = sorted(histories)
     planned = {

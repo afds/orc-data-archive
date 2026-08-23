@@ -126,7 +126,7 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertEqual("OLD", payload["records"][0]["ref_no"])
             self.assertEqual("archived", payload["records"][0]["status"])
 
-    def test_certificate_history_links_only_valid_performance_records(self):
+    def test_certificate_history_does_not_persist_derived_performance_urls(self):
         with tempfile.TemporaryDirectory() as directory:
             site_dir = Path(directory) / "docs"
             invalid = {"RefNo": "NO-POLAR", "YachtName": "No polar"}
@@ -141,13 +141,11 @@ class CertificateHistoryTests(unittest.TestCase):
             with (
                 site_dir / "certificates" / "2026" / "certificates.csv"
             ).open(encoding="utf-8", newline="") as source:
-                rows = {row["ref_no"]: row for row in csv.DictReader(source)}
+                reader = csv.DictReader(source)
+                rows = {row["ref_no"]: row for row in reader}
 
-            self.assertEqual(
-                "../../performance/?year=2026&country=EST&ref=A",
-                rows["A"]["performance_url"],
-            )
-            self.assertEqual("", rows["NO-POLAR"]["performance_url"])
+            self.assertNotIn("performance_url", reader.fieldnames)
+            self.assertEqual({"A", "NO-POLAR"}, set(rows))
 
     def test_generates_performance_page_shell(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -172,7 +170,23 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertIn('id="polar-certificate-ref"', page)
             self.assertNotIn('id="vpp-year"', page)
             self.assertIn('id="polar-sheet"', page)
-            self.assertIn('id="target-matrix"', page)
+            self.assertIn("Configure reference", page)
+            self.assertIn('id="matrix-heading">Target boat speed</h3>', page)
+            self.assertNotIn('id="tws-input"', page)
+            self.assertNotIn('id="beat-card"', page)
+            self.assertNotIn('id="run-card"', page)
+            self.assertNotIn('id="wind-presets"', page)
+            self.assertNotIn('id="control-status"', page)
+            self.assertNotIn("Published TWS", page)
+            self.assertIn('id="polar-yacht-name"', page)
+            self.assertIn('id="polar-sail-number"', page)
+            self.assertNotIn('id="polar-boat-name"', page)
+            self.assertEqual(1, page.count("<table"))
+            self.assertIn('id="performance-head"', page)
+            self.assertIn('id="performance-body"', page)
+            self.assertNotIn('id="beat-targets"', page)
+            self.assertNotIn('id="run-targets"', page)
+            self.assertNotIn('id="target-matrix"', page)
 
     def test_certificate_url_uses_orc_reference(self):
         self.assertEqual(

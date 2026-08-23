@@ -1,12 +1,13 @@
 # Rating Performance Guide
 
 The generated archive website includes a printable Rating Performance Guide for
-every archived certificate with a complete public ORC allowance matrix. Open a
+archived certificates with a complete public ORC allowance matrix. Open a
 certificate year in the browser and choose **Performance guide**, or use a
-shareable URL directly:
+shareable URL directly. If no valid public polar is archived for that
+certificate, the guide shows an unavailable message at runtime.
 
 ```text
-https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt
+https://afds.github.io/orc-data-archive/performance/?year=2026&country=EST&ref=04340004VU1&windUnit=kt
 ```
 
 The example above opens ADELE, EST 467.
@@ -16,21 +17,20 @@ The example above opens ADELE, EST 467.
 The first printable A4 landscape page prioritizes information that can be used
 while sailing:
 
-- selected-wind optimum beat and run targets;
 - target boat speed, TWA, AWA, and VMG;
 - complete optimum tables for every published TWS;
 - target boat speed at every published TWA, with the corresponding AWA in each
   cell.
 
-TWS can be selected at a published value or anywhere between the certificate's
-minimum and maximum. Values between published points are labeled as
-interpolated. The TWS control and headings can use knots or metres per second;
-target boat speed and VMG always remain in knots.
+TWS labels can use knots or metres per second; target boat speed and VMG always
+remain in knots. The first page uses one combined table: rows are published TWS
+conditions, fixed TWA values run across the middle, and optimum Beat and Run
+targets form the outer columns.
 
 The second page contains a mirrored speed polar. Apparent-wind angle is plotted
 on the left, true-wind angle on the right, and radial distance is target boat
-speed in knots. It includes all published TWS curves, highlights the selected
-condition, and marks optimum beat and run endpoints.
+speed in knots. It includes all published TWS curves and marks optimum beat and
+run endpoints.
 
 ## Calculations
 
@@ -49,10 +49,9 @@ boat speed is recovered from VMG and the optimum angle. Apparent wind is then
 derived from the TWS, TWA, and target boat-speed vectors using the relation
 documented by ORC.
 
-For an arbitrary TWS, the guide linearly interpolates fixed-angle boat speed,
-optimum VMG, and optimum angles between adjacent published conditions, then
-recalculates boat speed and AWA. It never extrapolates beyond the published
-range.
+The sailor-facing guide displays only the certificate's published wind-speed
+conditions. Apparent wind is recalculated for each published target without
+rounding intermediate values.
 
 See [ORC rating-data fields](data-fields.md#polar-and-selected-course-allowances)
 for the archived arrays and their units.

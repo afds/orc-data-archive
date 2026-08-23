@@ -91,7 +91,7 @@ test("only TWS converts between knots and metres per second", () => {
   assert.equal(formatWindSpeed(10, "kt"), "10 kt");
 });
 
-test("guide URL state reads units and writes canonical knot TWS", () => {
+test("guide URL state ignores legacy TWS selection and preserves units", () => {
   const initial = new URLSearchParams(
     "year=2026&country=est&ref=04340004VU1&tws=10&windUnit=ms",
   );
@@ -99,13 +99,24 @@ test("guide URL state reads units and writes canonical knot TWS", () => {
     year: "2026",
     country: "EST",
     ref: "04340004VU1",
-    tws: 10,
+    tws: null,
     windUnit: "ms",
   });
 
-  const written = writeGuideState(initial, {tws: 11, windUnit: "kt"});
-  assert.equal(written.get("tws"), "11");
+  const written = writeGuideState(initial, {windUnit: "kt"});
+  assert.equal(written.has("tws"), false);
   assert.equal(written.get("windUnit"), "kt");
+  assert.equal(written.get("ref"), "04340004VU1");
+});
+
+test("guide URL state removes TWS when the optional selection is cleared", () => {
+  const initial = new URLSearchParams(
+    "year=2026&country=EST&ref=04340004VU1&tws=10&windUnit=kt",
+  );
+
+  const written = writeGuideState(initial, {tws: null, windUnit: "kt"});
+
+  assert.equal(written.has("tws"), false);
   assert.equal(written.get("ref"), "04340004VU1");
 });
 
@@ -132,6 +143,12 @@ test("matrix inserts one selected interpolated column in wind-speed order", () =
 
 test("matrix does not duplicate an exact published selection", () => {
   const columns = matrixConditions(adeleAllowances, 10);
+
+  assert.deepEqual(columns.map(({tws}) => tws), [8, 10]);
+});
+
+test("matrix renders published columns when no TWS is selected", () => {
+  const columns = matrixConditions(adeleAllowances, null);
 
   assert.deepEqual(columns.map(({tws}) => tws), [8, 10]);
 });

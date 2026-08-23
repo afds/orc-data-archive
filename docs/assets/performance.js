@@ -1,14 +1,10 @@
 import {
-  conditionAtTws,
-  convertWindSpeed,
   formatWindSpeed,
-  matrixConditions,
   polarPoint,
   polarSeries,
   publishedCondition,
   readGuideState,
   smoothSvgPath,
-  windSpeedForDisplay,
   writeGuideState,
 } from "./performance-core.mjs";
 
@@ -17,15 +13,10 @@ const guide = byId("performance-guide");
 const errorBox = byId("guide-error");
 const errorMessage = byId("guide-error-message");
 const errorLink = byId("guide-error-link");
-const twsInput = byId("tws-input");
-const twsUnitLabel = byId("tws-unit-label");
-const windPresets = byId("wind-presets");
-const controlStatus = byId("control-status");
 const unitInputs = [...document.querySelectorAll('input[name="wind-unit"]')];
 
 let record;
 let state;
-let lastValidCondition;
 
 const node = (tag, text, className) => {
   const element = document.createElement(tag);
@@ -54,11 +45,6 @@ const date = (value) => {
     : `Issued ${new Intl.DateTimeFormat(undefined, {dateStyle: "medium"}).format(parsed)}`;
 };
 
-const selectedCell = (cell, selected) => {
-  if (selected) cell.dataset.selected = "true";
-  return cell;
-};
-
 const SVG_NS = "http://www.w3.org/2000/svg";
 const svgNode = (tag, attributes = {}, text) => {
   const element = document.createElementNS(SVG_NS, tag);
@@ -69,89 +55,63 @@ const svgNode = (tag, attributes = {}, text) => {
   return element;
 };
 
-const renderTargetCard = (target, heading) => {
-  const fragment = document.createDocumentFragment();
-  fragment.append(node("p", heading, "target-label"));
-  fragment.append(node("strong", speed(target.boatSpeed), "target-speed"));
-  const angles = node("dl", undefined, "target-details");
-  for (const [term, value] of [
-    ["TWA", angle(target.twa)],
-    ["AWA", angle(target.awa)],
-    ["Target VMG", speed(target.vmg)],
-  ]) {
-    const group = node("div");
-    group.append(node("dt", term), node("dd", value));
-    angles.append(group);
-  }
-  fragment.append(angles);
-  return fragment;
-};
+const renderPerformanceTable = () => {
+  const axes = node("tr");
+  const twsHeading = node("th", "TWS ↓");
+  twsHeading.scope = "col";
+  twsHeading.rowSpan = 2;
+  const beatHeading = node("th", "Beat", "optimum-heading");
+  beatHeading.scope = "col";
+  beatHeading.rowSpan = 2;
+  const twaHeading = node("th", "TWA →");
+  twaHeading.scope = "colgroup";
+  twaHeading.colSpan = record.allowances.wind_angles.length;
+  const runHeading = node("th", "Run", "optimum-heading");
+  runHeading.scope = "col";
+  runHeading.rowSpan = 2;
+  axes.append(twsHeading, beatHeading, twaHeading, runHeading);
 
-const renderOptimumRows = (targetName, bodyId) => {
-  const body = byId(bodyId);
+  const angles = node("tr");
+  for (const twa of record.allowances.wind_angles) {
+    const heading = node("th", angle(twa, true));
+    heading.scope = "col";
+    angles.append(heading);
+  }
+  byId("performance-head").replaceChildren(axes, angles);
+
+  const optimumCell = (target) => {
+    const cell = node("td", undefined, "optimum-cell");
+    cell.append(
+      node("strong", speed(target.boatSpeed)),
+      node("small", `TWA ${angle(target.twa)} · AWA ${angle(target.awa)}`),
+      node("small", `VMG ${speed(target.vmg)}`),
+    );
+    return cell;
+  };
   const rows = record.allowances.wind_speeds.map((_, index) => {
     const condition = publishedCondition(record.allowances, index);
-    const target = condition[targetName];
     const row = node("tr");
-    const selected = condition.tws === lastValidCondition.tws;
-    row.append(
-      selectedCell(node("th", formatWindSpeed(condition.tws, state.windUnit)), selected),
-      selectedCell(node("td", angle(target.twa)), selected),
-      selectedCell(node("td", angle(target.awa)), selected),
-      selectedCell(node("td", speed(target.boatSpeed)), selected),
-      selectedCell(node("td", speed(target.vmg)), selected),
-    );
-    row.firstElementChild.scope = "row";
-    return row;
-  });
-  body.replaceChildren(...rows);
-};
-
-const renderMatrix = () => {
-  const conditions = matrixConditions(record.allowances, lastValidCondition.tws);
-  const head = byId("matrix-head");
-  const corner = node("th", "TWA");
-  corner.scope = "col";
-  const headings = conditions.map((condition) => {
-    const selected = condition.tws === lastValidCondition.tws;
-    const heading = selectedCell(node("th"), selected);
-    heading.scope = "col";
-    heading.append(node("span", formatWindSpeed(condition.tws, state.windUnit)));
-    if (condition.interpolated) heading.append(node("small", "Interpolated"));
-    return heading;
-  });
-  head.replaceChildren(corner, ...headings);
-
-  const rows = record.allowances.wind_angles.map((twa, angleIndex) => {
-    const row = node("tr");
-    const heading = node("th", angle(twa));
-    heading.scope = "row";
-    row.append(heading);
-    for (const condition of conditions) {
-      const target = condition.fixed[angleIndex];
-      const cell = selectedCell(
-        node("td"),
-        condition.tws === lastValidCondition.tws,
-      );
+    const tws = node("th", formatWindSpeed(condition.tws, state.windUnit));
+    tws.scope = "row";
+    row.append(tws, optimumCell(condition.beat));
+    for (const target of condition.fixed) {
+      const cell = node("td");
       cell.append(
         node("strong", speed(target.boatSpeed)),
         node("small", `AWA ${angle(target.awa, true)}`),
       );
       row.append(cell);
     }
+    row.append(optimumCell(condition.run));
     return row;
   });
-  byId("matrix-body").replaceChildren(...rows);
+  byId("performance-body").replaceChildren(...rows);
 };
 
 const renderPolar = () => {
-  const published = record.allowances.wind_speeds.map((_, index) => (
+  const conditions = record.allowances.wind_speeds.map((_, index) => (
     publishedCondition(record.allowances, index)
   ));
-  const conditions = lastValidCondition.interpolated
-    ? [...published, lastValidCondition]
-    : published;
-  const selectedIndex = conditions.findIndex(({tws}) => tws === lastValidCondition.tws);
   const maxBoatSpeed = Math.max(...conditions.flatMap((condition) => [
     condition.beat.boatSpeed,
     condition.run.boatSpeed,
@@ -182,7 +142,7 @@ const renderPolar = () => {
       x: center.x + knot * scale + 3,
       y: center.y - 5,
       class: "polar-speed-label",
-    }, `${knot}`));
+    }, knot === ringMaximum ? `${knot} kt` : `${knot}`));
   }
   const spokeAngles = [0, 15, 30, 45, 60, 75, 90, 120, 150, 180];
   for (const side of ["left", "right"]) {
@@ -208,7 +168,7 @@ const renderPolar = () => {
     svgNode("text", {x: 90, y: 28, class: "polar-side-label"}, "AWA"),
     svgNode("text", {x: 790, y: 28, class: "polar-side-label"}, "TWA"),
     svgNode("text", {x: 475, y: 22, class: "polar-wind-label"}, "TRUE WIND"),
-    svgNode("path", {d: "M460 38 L460 8 M454 17 L460 8 L466 17", class: "polar-wind-arrow"}),
+    svgNode("path", {d: "M460 8 L460 38 M454 29 L460 38 L466 29", class: "polar-wind-arrow"}),
   );
   svg.append(grid);
 
@@ -216,12 +176,11 @@ const renderPolar = () => {
   const dashPatterns = ["2 4", "7 4", "1 3", "none", "10 4", "7 3 2 3", "3 3", "12 3", "5 2", "none"];
   const legendItems = [];
   conditions.forEach((condition, index) => {
-    const selected = index === selectedIndex;
     const series = polarSeries(condition);
     const color = palette[index % palette.length];
     const dash = dashPatterns[index % dashPatterns.length];
     const group = svgNode("g", {
-      class: `polar-series${selected ? " is-selected" : ""}`,
+      class: "polar-series",
       "data-tws": condition.tws,
     });
     for (const [side, points] of Object.entries(series)) {
@@ -240,7 +199,7 @@ const renderPolar = () => {
         group.append(svgNode("circle", {
           cx: center.x + point.x,
           cy: center.y + point.y,
-          r: selected ? 4 : 2,
+          r: 2,
           class: "polar-endpoint",
           fill: color,
         }));
@@ -248,7 +207,7 @@ const renderPolar = () => {
     }
     svg.append(group);
 
-    const item = node("span", undefined, selected ? "is-selected" : "");
+    const item = node("span");
     const swatch = node("i");
     swatch.style.borderColor = color;
     swatch.style.borderTopStyle = dash === "none" ? "solid" : "dashed";
@@ -256,7 +215,6 @@ const renderPolar = () => {
       swatch,
       node("b", formatWindSpeed(condition.tws, state.windUnit)),
     );
-    if (condition.interpolated) item.append(node("small", " interpolated"));
     legendItems.push(item);
   });
   byId("polar-legend").replaceChildren(...legendItems);
@@ -268,77 +226,23 @@ const syncUrl = () => {
   window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
 };
 
-const renderGuide = (condition) => {
-  lastValidCondition = condition;
-  byId("selected-tws").textContent = `${formatWindSpeed(condition.tws, state.windUnit)} targets`;
-  byId("interpolated-badge").hidden = !condition.interpolated;
-  byId("beat-card").replaceChildren(renderTargetCard(condition.beat, "Beat target"));
-  byId("run-card").replaceChildren(renderTargetCard(condition.run, "Run target"));
-  renderOptimumRows("beat", "beat-targets");
-  renderOptimumRows("run", "run-targets");
-  renderMatrix();
+const renderGuide = () => {
+  renderPerformanceTable();
   renderPolar();
-  byId("polar-boat-name").textContent = `${record.yacht_name || "Unnamed yacht"} · ${record.sail_no || record.ref_no}`;
-  controlStatus.textContent = condition.interpolated
-    ? `${formatWindSpeed(condition.tws, state.windUnit)} is interpolated between published ORC values.`
-    : `${formatWindSpeed(condition.tws, state.windUnit)} is a published ORC wind speed.`;
-  controlStatus.classList.remove("control-error");
+  byId("polar-yacht-name").textContent = record.yacht_name || "Unnamed yacht";
+  byId("polar-sail-number").textContent = record.sail_no || record.ref_no;
   guide.hidden = false;
   errorBox.hidden = true;
   syncUrl();
 };
 
-const renderPresets = () => {
-  const buttons = record.allowances.wind_speeds.map((tws) => {
-    const button = node("button", formatWindSpeed(tws, state.windUnit));
-    button.type = "button";
-    button.dataset.tws = String(tws);
-    if (tws === lastValidCondition?.tws) button.setAttribute("aria-pressed", "true");
-    button.addEventListener("click", () => selectTws(tws));
-    return button;
-  });
-  windPresets.replaceChildren(...buttons);
-};
-
-const setInputFromCanonical = () => {
-  const displayed = windSpeedForDisplay(state.tws, state.windUnit);
-  twsInput.value = displayed.toFixed(1).replace(/\.0$/, "");
-  twsInput.step = state.windUnit === "ms" ? "0.5" : "0.1";
-  twsUnitLabel.textContent = state.windUnit === "ms" ? "m/s" : "kt";
-};
-
-const selectTws = (tws) => {
-  try {
-    const condition = conditionAtTws(record.allowances, tws);
-    state.tws = tws;
-    setInputFromCanonical();
-    renderGuide(condition);
-    renderPresets();
-  } catch (error) {
-    const minimum = formatWindSpeed(record.allowances.wind_speeds[0], state.windUnit);
-    const maximum = formatWindSpeed(record.allowances.wind_speeds.at(-1), state.windUnit);
-    controlStatus.textContent = `Enter a true wind speed between ${minimum} and ${maximum}.`;
-    controlStatus.classList.add("control-error");
-  }
-};
-
 const bindControls = () => {
-  twsInput.addEventListener("input", () => {
-    const displayed = Number(twsInput.value);
-    if (!Number.isFinite(displayed) || twsInput.value.trim() === "") {
-      selectTws(Number.NaN);
-      return;
-    }
-    selectTws(convertWindSpeed(displayed, state.windUnit, "kt"));
-  });
   for (const input of unitInputs) {
     input.checked = input.value === state.windUnit;
     input.addEventListener("change", () => {
       if (!input.checked) return;
       state.windUnit = input.value;
-      setInputFromCanonical();
-      renderPresets();
-      renderGuide(lastValidCondition);
+      renderGuide();
     });
   }
   byId("print-guide").addEventListener("click", () => window.print());
@@ -364,14 +268,6 @@ const initialize = async () => {
     return;
   }
 
-  const minimum = record.allowances.wind_speeds[0];
-  const maximum = record.allowances.wind_speeds.at(-1);
-  if (state.tws === null || state.tws < minimum || state.tws > maximum) {
-    state.tws = minimum <= 10 && maximum >= 10
-      ? 10
-      : record.allowances.wind_speeds[Math.floor(record.allowances.wind_speeds.length / 2)];
-  }
-
   byId("yacht-name").textContent = record.yacht_name || "Unnamed yacht";
   byId("sail-number").textContent = record.sail_no || record.ref_no;
   byId("boat-summary").textContent = record.class || "Class unavailable";
@@ -381,8 +277,7 @@ const initialize = async () => {
   byId("certificate-status").textContent = record.status === "active" ? "Active certificate" : "Archived certificate";
   byId("official-certificate").href = record.certificate_url;
   bindControls();
-  setInputFromCanonical();
-  selectTws(state.tws);
+  renderGuide();
 };
 
 initialize();

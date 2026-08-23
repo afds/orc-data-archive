@@ -104,7 +104,6 @@ and certificate links remain in the history.
 | `status` | `active` while present in the feed, otherwise `archived`. |
 | `removed_on` | First successful archive date on which the reference was absent. |
 | `certificate_url` | Stable ORC certificate-renderer URL derived from `ref_no`. |
-| `performance_url` | Relative Rating Performance Guide URL when a valid archived polar is available. |
 
 Removal status is updated only after the deletion guard accepts the full run.
 A country not advertised during a run is left unchanged rather than treating
