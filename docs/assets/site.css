@@ -272,6 +272,8 @@ footer {
 .polar-legend span { align-items: center; color: var(--muted); display: inline-flex; font-size: 10px; gap: 5px; }
 .polar-legend i { border-top: 3px solid; display: inline-block; width: 22px; }
 .polar-legend small { font-size: 8px; font-weight: 650; text-transform: uppercase; }
+.polar-legend .polar-marker-keys { flex-basis: 100%; gap: 14px; justify-content: center; }
+.polar-legend .polar-symbol { color: #111; font-size: 13px; line-height: 1; }
 .polar-chart { margin: 0 auto; max-width: 1120px; position: relative; }
 .polar-chart svg { display: block; height: auto; max-height: 760px; width: 100%; }
 .polar-grid circle, .polar-grid line { fill: none; stroke: #d7e0e4; stroke-width: 1; }
@@ -281,10 +283,15 @@ footer {
 .polar-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
 .polar-series { opacity: .78; }
 .polar-endpoint { stroke: #fff; stroke-width: 1; }
+.polar-vmg-marker { pointer-events: none; }
+.polar-vmg-marker-halo, .polar-vmg-marker-line { fill: none; stroke-linecap: round; }
+.polar-vmg-marker-halo { stroke: #fff; stroke-width: 3; }
+.polar-vmg-marker-line { stroke: #111; stroke-width: 1.25; }
 .polar-hit-area { cursor: crosshair; fill: none; pointer-events: stroke; stroke: transparent; stroke-width: 18; touch-action: none; }
 .polar-chart svg.is-inspecting .polar-series { opacity: .18; }
 .polar-chart svg.is-inspecting .polar-series.is-active, .polar-series:focus { opacity: 1; }
 .polar-series.is-active .polar-curve, .polar-series:focus .polar-curve { stroke-width: 3; }
+.polar-series.is-active .polar-hit-area { stroke-width: 32; }
 .polar-series:focus { outline: none; }
 .polar-inspection-marker { pointer-events: none; stroke: #fff; stroke-width: 2; }
 .polar-inspection-marker[hidden] { display: none; }
@@ -330,7 +337,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .performance-table-section, .speed-table, .vmg-table { break-inside: avoid; page-break-inside: avoid; }
   .polar-chart svg { height: 158mm; margin: 0 auto; width: auto; }
   .polar-legend { margin: 1.5mm 0 0; }
-  .performance-sheet th, .performance-sheet caption, .polar-curve, .polar-series, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .performance-sheet th, .performance-sheet caption, .polar-curve, .polar-series, .polar-vmg-marker-line, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 
 @media screen and (max-width: 760px) {

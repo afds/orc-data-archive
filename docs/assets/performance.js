@@ -2,8 +2,12 @@ import {
   formatWindSpeed,
   interpolatePolarTarget,
   oppositePolarSelection,
+  polarHoverSeries,
   polarPoint,
   polarSeries,
+  polarVmgMarkerPath,
+  polarVmgSymbol,
+  polarVmgTargets,
   publishedCondition,
   readGuideState,
   smoothSvgPath,
@@ -265,6 +269,7 @@ const renderPolar = () => {
     activeGroup?.classList.remove("is-active");
     activeGroup = group;
     group.classList.add("is-active");
+    if (markers[0].parentNode === svg) svg.insertBefore(group, markers[0]);
     svg.classList.add("is-inspecting");
     for (const [marker, markerPoint] of markers.map((marker, index) => (
       [marker, index === 0 ? point : counterpart]
@@ -287,6 +292,7 @@ const renderPolar = () => {
 
   conditions.forEach((condition, index) => {
     const series = polarSeries(condition);
+    const vmgTargets = polarVmgTargets(series);
     const color = palette[index % palette.length];
     const dash = dashPatterns[index % dashPatterns.length];
     const group = svgNode("g", {
@@ -321,6 +327,9 @@ const renderPolar = () => {
         };
         segmentsBySide[side].push(segment);
         const inspect = (event) => {
+          if (polarHoverSeries(activeGroup, group, activeGroup?.matches(":hover")) !== group) {
+            return;
+          }
           const cursor = svgCoordinates(svg, event);
           const closest = closestPointOnPath(hitPath, cursor.x, cursor.y);
           const target = interpolatePolarTarget(
@@ -347,9 +356,6 @@ const renderPolar = () => {
         hitPath.addEventListener("pointerenter", inspect);
         hitPath.addEventListener("pointermove", inspect);
         hitPath.addEventListener("pointerdown", inspect);
-        hitPath.addEventListener("pointerleave", (event) => {
-          if (event.pointerType === "mouse") hideInspection();
-        });
         hitPath.addEventListener("pointercancel", hideInspection);
         group.append(hitPath);
       });
@@ -362,6 +368,27 @@ const renderPolar = () => {
           class: "polar-endpoint",
           fill: color,
         }));
+      }
+      for (const target of vmgTargets[side]) {
+        const markerPoint = polarPoint(target.angle, target.boatSpeed, side, scale);
+        const x = center.x + markerPoint.x;
+        const y = center.y + markerPoint.y;
+        const size = 2.25;
+        const path = polarVmgMarkerPath(target.kind, x, y, size);
+        const marker = svgNode("g", {
+          class: "polar-vmg-marker",
+          "data-kind": target.kind,
+          "data-side": side,
+          "aria-hidden": "true",
+        });
+        marker.append(
+          svgNode("path", {d: path, class: "polar-vmg-marker-halo"}),
+          svgNode("path", {
+            d: path,
+            class: "polar-vmg-marker-line",
+          }),
+        );
+        group.append(marker);
       }
     }
     const keyboardSegments = segmentsBySide.right;
@@ -419,7 +446,20 @@ const renderPolar = () => {
     );
     legendItems.push(item);
   });
+  const markerKeys = node("span", undefined, "polar-marker-keys");
+  for (const [kind, label] of [["beat", "Beat VMG"], ["run", "Run VMG"]]) {
+    const item = node("span", undefined, "polar-marker-key");
+    item.append(
+      node("b", polarVmgSymbol(kind), "polar-symbol"),
+      node("small", label),
+    );
+    markerKeys.append(item);
+  }
+  legendItems.push(markerKeys);
   svg.append(...markers);
+  svg.addEventListener("pointermove", (event) => {
+    if (activeGroup && !event.target.closest?.(".polar-series")) hideInspection();
+  });
   svg.addEventListener("mouseleave", hideInspection);
   byId("polar-legend").replaceChildren(...legendItems);
   polarTooltip.hidden = true;

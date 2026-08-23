@@ -231,7 +231,7 @@ export const polarSeries = (condition) => {
     {...condition.beat, kind: "beat"},
     ...condition.fixed.map((target) => ({...target, kind: "fixed"})),
     {...condition.run, kind: "run"},
-  ];
+  ].sort((left, right) => left.twa - right.twa);
   return {
     left: targets.map((target) => ({
       angle: target.awa,
@@ -250,4 +250,40 @@ export const polarSeries = (condition) => {
       kind: target.kind,
     })),
   };
+};
+
+export const polarVmgTargets = (series) => Object.fromEntries(
+  Object.entries(series).map(([side, targets]) => [
+    side,
+    targets.filter(({kind}) => kind === "beat" || kind === "run"),
+  ]),
+);
+
+export const polarHoverSeries = (activeSeries, candidateSeries, activeHovered) => (
+  activeSeries && activeHovered ? activeSeries : candidateSeries
+);
+
+export const polarVmgSymbol = (kind) => {
+  if (kind === "beat") return "×";
+  if (kind === "run") return "◇";
+  throw new RangeError(`Unsupported VMG marker kind: ${kind}`);
+};
+
+export const polarVmgMarkerPath = (kind, x, y, size) => {
+  if (kind === "beat") {
+    return [
+      `M ${x - size} ${y - size} L ${x + size} ${y + size}`,
+      `M ${x + size} ${y - size} L ${x - size} ${y + size}`,
+    ].join(" ");
+  }
+  if (kind === "run") {
+    return [
+      `M ${x} ${y - size}`,
+      `L ${x + size} ${y}`,
+      `L ${x} ${y + size}`,
+      `L ${x - size} ${y}`,
+      "Z",
+    ].join(" ");
+  }
+  throw new RangeError(`Unsupported VMG marker kind: ${kind}`);
 };

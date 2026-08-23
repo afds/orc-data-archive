@@ -17,7 +17,11 @@ const {
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
 const interpolatePolarTarget = performanceCore.interpolatePolarTarget ?? (() => ({}));
 const oppositePolarSelection = performanceCore.oppositePolarSelection ?? (() => ({}));
+const polarHoverSeries = performanceCore.polarHoverSeries ?? ((_, candidate) => candidate);
 const polarSeries = performanceCore.polarSeries ?? (() => ({left: [], right: []}));
+const polarVmgMarkerPath = performanceCore.polarVmgMarkerPath ?? (() => "");
+const polarVmgSymbol = performanceCore.polarVmgSymbol ?? (() => "");
+const polarVmgTargets = performanceCore.polarVmgTargets ?? (() => ({left: [], right: []}));
 const smoothSvgSegments = performanceCore.smoothSvgSegments ?? (() => []);
 
 const adeleAllowances = {
@@ -214,4 +218,67 @@ test("polar series orders beat, fixed angles, and run on both angle systems", ()
     Object.keys(series.right[0]).sort(),
     ["angle", "awa", "boatSpeed", "kind", "twa", "vmg"],
   );
+});
+
+test("polar series inserts a run target before a deeper fixed angle", () => {
+  const thunderAllowances = {
+    wind_speeds: [20],
+    wind_angles: [135, 150],
+    beat: [681.9],
+    beat_angle: [36.7],
+    run: [381.8],
+    gybe_angle: [147.9],
+    fixed: {
+      "135": [318.0],
+      "150": [330.6],
+    },
+  };
+
+  const series = polarSeries(publishedCondition(thunderAllowances, 0));
+
+  assert.deepEqual(
+    series.right.map(({angle: value}) => value),
+    [36.7, 135, 147.9, 150],
+  );
+  assert.deepEqual(
+    series.right.map(({kind}) => kind),
+    ["beat", "fixed", "run", "fixed"],
+  );
+  assert.ok(series.left.every((target, index, targets) => (
+    index === 0 || target.angle >= targets[index - 1].angle
+  )));
+});
+
+test("polar VMG markers select beat and run targets on both angle systems", () => {
+  const markers = polarVmgTargets(polarSeries(publishedCondition(adeleAllowances, 1)));
+
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(markers).map(([side, targets]) => [
+      side,
+      targets.map(({kind, angle}) => [kind, Number(angle.toFixed(1))]),
+    ])),
+    {
+      left: [["beat", 25.3], ["run", 121.5]],
+      right: [["beat", 40], ["run", 152.5]],
+    },
+  );
+});
+
+test("polar VMG markers use a cross for beat and a diamond for run", () => {
+  assert.equal(
+    polarVmgMarkerPath("beat", 10, 20, 2),
+    "M 8 18 L 12 22 M 12 18 L 8 22",
+  );
+  assert.equal(
+    polarVmgMarkerPath("run", 10, 20, 2),
+    "M 10 18 L 12 20 L 10 22 L 8 20 Z",
+  );
+  assert.equal(polarVmgSymbol("beat"), "×");
+  assert.equal(polarVmgSymbol("run"), "◇");
+});
+
+test("polar hover retains the active curve until its corridor is left", () => {
+  assert.equal(polarHoverSeries("20 kt", "16 kt", true), "20 kt");
+  assert.equal(polarHoverSeries("20 kt", "16 kt", false), "16 kt");
+  assert.equal(polarHoverSeries(null, "16 kt", false), "16 kt");
 });
