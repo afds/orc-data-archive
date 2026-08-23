@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 import html
 import io
+import json
+import math
 import urllib.parse
 from collections.abc import Iterable
 from pathlib import Path
@@ -27,6 +29,7 @@ HISTORY_FIELDS = (
     "status",
     "removed_on",
     "certificate_url",
+    "performance_url",
 )
 CERTIFICATE_URL = "https://data.orc.org/public/WPub.dll/CC/{ref_no}.pdf"
 SAILOR_SERVICES_URL = "https://orc.org/sailors/sailor-services"
@@ -38,8 +41,100 @@ def certificate_url(ref_no: str) -> str:
     return CERTIFICATE_URL.format(ref_no=encoded)
 
 
+def performance_url(year: int, country: str, ref_no: str) -> str:
+    query = urllib.parse.urlencode(
+        {"year": year, "country": country, "ref": ref_no}
+    )
+    return f"../../performance/?{query}"
+
+
 def _text(value: object) -> str:
     return "" if value is None else " ".join(str(value).split())
+
+
+def _finite_numbers(value: object, *, positive: bool = False) -> list | None:
+    if not isinstance(value, list) or not value:
+        return None
+    numbers = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
+            return None
+        if not math.isfinite(item) or positive and item <= 0:
+            return None
+        numbers.append(item)
+    return numbers
+
+
+def _strictly_increasing(values: list) -> bool:
+    return all(left < right for left, right in zip(values, values[1:]))
+
+
+def _angle_key(angle: int | float) -> str:
+    return str(angle).removesuffix(".0")
+
+
+def extract_performance_record(
+    year: int,
+    country: str,
+    boat: dict,
+    status: str,
+) -> dict | None:
+    """Return the compact validated polar fields needed by the guide."""
+    ref_no = _text(boat.get("RefNo"))
+    allowances = boat.get("Allowances")
+    if not ref_no or not isinstance(allowances, dict):
+        return None
+
+    wind_speeds = _finite_numbers(allowances.get("WindSpeeds"), positive=True)
+    wind_angles = _finite_numbers(allowances.get("WindAngles"), positive=True)
+    if (
+        wind_speeds is None
+        or wind_angles is None
+        or not _strictly_increasing(wind_speeds)
+        or not _strictly_increasing(wind_angles)
+        or wind_angles[-1] >= 180
+    ):
+        return None
+
+    series = {}
+    for source, target, positive in (
+        ("Beat", "beat", True),
+        ("BeatAngle", "beat_angle", False),
+        ("Run", "run", True),
+        ("GybeAngle", "gybe_angle", False),
+    ):
+        values = _finite_numbers(allowances.get(source), positive=positive)
+        if values is None or len(values) != len(wind_speeds):
+            return None
+        if not positive and any(angle < 0 or angle > 180 for angle in values):
+            return None
+        series[target] = values
+
+    fixed = {}
+    for angle in wind_angles:
+        key = _angle_key(angle)
+        values = _finite_numbers(allowances.get(f"R{key}"), positive=True)
+        if values is None or len(values) != len(wind_speeds):
+            return None
+        fixed[key] = values
+
+    return {
+        "ref_no": ref_no,
+        "sail_no": _text(boat.get("SailNo")),
+        "yacht_name": _text(boat.get("YachtName")),
+        "class": _text(boat.get("Class")),
+        "issue_date": _text(boat.get("IssueDate")),
+        "status": status,
+        "vpp_year": year,
+        "country": country,
+        "certificate_url": certificate_url(ref_no),
+        "allowances": {
+            "wind_speeds": wind_speeds,
+            "wind_angles": wind_angles,
+            **series,
+            "fixed": fixed,
+        },
+    }
 
 
 def _active_record(
@@ -72,6 +167,7 @@ def _active_record(
         "status": "active",
         "removed_on": "",
         "certificate_url": certificate_url(ref_no),
+        "performance_url": "",
     }
 
 
@@ -80,7 +176,9 @@ def _load_history(path: Path, year: int) -> dict[str, dict[str, str]]:
         return {}
     with path.open(encoding="utf-8", newline="") as source:
         reader = csv.DictReader(source)
-        missing = set(HISTORY_FIELDS) - set(reader.fieldnames or ())
+        missing = set(HISTORY_FIELDS) - {"performance_url"} - set(
+            reader.fieldnames or ()
+        )
         if missing:
             raise ValueError(f"{path} is missing history fields: {sorted(missing)}")
         records = {}
@@ -117,6 +215,57 @@ def _render_csv(records: dict[str, dict[str, str]]) -> bytes:
         )
     )
     return output.getvalue().encode("utf-8")
+
+
+def _load_performance(path: Path, year: int, country: str) -> dict[str, dict]:
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path} contains malformed performance JSON") from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
+        raise ValueError(f"{path} has an invalid performance record envelope")
+    records = {}
+    for record in payload["records"]:
+        if not isinstance(record, dict) or not _text(record.get("ref_no")):
+            raise ValueError(f"{path} contains an invalid performance record")
+        if record.get("vpp_year") != year or record.get("country") != country:
+            raise ValueError(f"{path} contains a performance record for another dataset")
+        ref_no = record["ref_no"]
+        if ref_no in records:
+            raise ValueError(f"{path} contains duplicate performance ref {ref_no}")
+        records[ref_no] = record
+    return records
+
+
+def _render_performance_json(records: dict[str, dict]) -> bytes:
+    ordered = sorted(
+        records.values(),
+        key=lambda record: (
+            record["sail_no"].casefold(),
+            record["yacht_name"].casefold(),
+            record["ref_no"].casefold(),
+        ),
+    )
+    rendered = json.dumps(
+        {"records": ordered},
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+    return f"{rendered}\n".encode()
+
+
+def _render_performance_page() -> bytes:
+    body = """<header class="site-header">
+  <a class="brand" href="../">ORC certificate archive</a>
+</header>
+<main>
+  <h1>Rating Performance Guide</h1>
+  <p>Printable theoretical performance targets from archived ORC rating data.</p>
+</main>"""
+    return _page("Rating Performance Guide", body, "../")
 
 
 def _page(title: str, body: str, asset_prefix: str, with_script: bool = False) -> bytes:
@@ -277,6 +426,8 @@ def build_history_site(
     ] = (),
 ) -> dict[Path, bytes]:
     """Return all history/site files that should exist after this observation."""
+    observations = list(observations)
+    historical_observations = list(historical_observations)
     history_root = site_dir / "certificates"
     histories: dict[int, dict[str, dict[str, str]]] = {}
     for path in history_root.glob("*/certificates.csv"):
@@ -333,12 +484,54 @@ def build_history_site(
                 record["status"] = "archived"
                 record["removed_on"] = observed_on
 
+    performance_root = site_dir / "performance"
+    performance: dict[tuple[int, str], dict[str, dict]] = {}
+    for path in performance_root.glob("*/*.json"):
+        try:
+            year = int(path.parent.name)
+        except ValueError:
+            continue
+        country = path.stem.upper()
+        performance[(year, country)] = _load_performance(path, year, country)
+
+    for _, year, country, boats in historical_observations:
+        records = performance.setdefault((year, country), {})
+        for boat in boats:
+            compact = extract_performance_record(year, country, boat, "archived")
+            if compact is not None:
+                records.setdefault(compact["ref_no"], compact)
+
+    for year, country, boats in observations:
+        records = performance.setdefault((year, country), {})
+        for boat in boats:
+            compact = extract_performance_record(year, country, boat, "active")
+            if compact is not None:
+                records[compact["ref_no"]] = compact
+
+    for (year, country), records in performance.items():
+        history = histories.get(year, {})
+        for ref_no, compact in records.items():
+            historical = history.get(ref_no)
+            if historical is not None:
+                compact["status"] = historical["status"]
+                historical["performance_url"] = performance_url(
+                    year, country, ref_no
+                )
+
     years = sorted(histories)
-    planned = {site_dir / "index.html": _render_index(histories)}
+    planned = {
+        site_dir / "index.html": _render_index(histories),
+        performance_root / "index.html": _render_performance_page(),
+    }
     for year in years:
         year_dir = history_root / str(year)
         planned[year_dir / "certificates.csv"] = _render_csv(histories[year])
         planned[year_dir / "index.html"] = _render_year_page(
             year, years, histories[year]
         )
+    for (year, country), records in sorted(performance.items()):
+        if records:
+            planned[
+                performance_root / str(year) / f"{country}.json"
+            ] = _render_performance_json(records)
     return planned

@@ -108,6 +108,11 @@
     row.append(statusCell);
 
     const certificate = document.createElement("td");
+    if (record.performance_url) {
+      const performance = element("a", "Performance guide", "performance-link");
+      performance.href = record.performance_url;
+      certificate.append(performance);
+    }
     const link = element("a", "Open certificate", "certificate-link");
     link.href = record.certificate_url;
     link.target = "_blank";

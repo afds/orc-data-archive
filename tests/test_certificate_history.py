@@ -1,4 +1,5 @@
 import csv
+import json
 import sys
 import tempfile
 import unittest
@@ -7,7 +8,35 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
+import certificate_history  # noqa: E402
 from certificate_history import build_history_site, certificate_url  # noqa: E402
+
+
+extract_performance_record = getattr(
+    certificate_history,
+    "extract_performance_record",
+    lambda year, country, boat, status: None,
+)
+
+
+def polar_boat(ref_no: str = "A") -> dict:
+    return {
+        "RefNo": ref_no,
+        "SailNo": "EST 467",
+        "YachtName": "ADELE",
+        "Class": "First 34.7",
+        "IssueDate": "2026-07-31T09:26:27Z",
+        "Allowances": {
+            "WindSpeeds": [8, 10],
+            "WindAngles": [52, 60],
+            "Beat": [895.5, 793.2],
+            "BeatAngle": [41.6, 40.0],
+            "Run": [797.6, 672.0],
+            "GybeAngle": [149.8, 152.5],
+            "R52": [601.0, 548.3],
+            "R60": [576.7, 532.9],
+        },
+    }
 
 
 def write_plan(plan: dict[Path, bytes]) -> None:
@@ -17,6 +46,103 @@ def write_plan(plan: dict[Path, bytes]) -> None:
 
 
 class CertificateHistoryTests(unittest.TestCase):
+    def test_extracts_only_valid_compact_performance_fields(self):
+        boat = polar_boat()
+        boat["GPH"] = 600.1
+
+        record = extract_performance_record(2026, "EST", boat, "active")
+
+        self.assertIsNotNone(record)
+        self.assertEqual("A", record["ref_no"])
+        self.assertEqual([8, 10], record["allowances"]["wind_speeds"])
+        self.assertEqual({"52", "60"}, set(record["allowances"]["fixed"]))
+        self.assertNotIn("GPH", record)
+
+    def test_rejects_incomplete_or_non_finite_polar(self):
+        incomplete = polar_boat("SHORT")
+        incomplete["Allowances"]["R60"] = [576.7]
+        non_finite = polar_boat("INFINITE")
+        non_finite["Allowances"]["Beat"][0] = float("inf")
+
+        self.assertIsNone(
+            extract_performance_record(2026, "EST", incomplete, "active")
+        )
+        self.assertIsNone(
+            extract_performance_record(2026, "EST", non_finite, "active")
+        )
+
+    def test_generates_and_preserves_compact_performance_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            site_dir = Path(directory) / "docs"
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [polar_boat()])],
+                    "2026-08-22",
+                )
+            )
+
+            performance_path = site_dir / "performance" / "2026" / "EST.json"
+            payload = json.loads(performance_path.read_text())
+            self.assertEqual(["A"], [record["ref_no"] for record in payload["records"]])
+            self.assertEqual("active", payload["records"][0]["status"])
+            self.assertTrue((site_dir / "performance" / "index.html").exists())
+
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [])],
+                    "2026-08-23",
+                )
+            )
+
+            payload = json.loads(performance_path.read_text())
+            self.assertEqual(["A"], [record["ref_no"] for record in payload["records"]])
+            self.assertEqual("archived", payload["records"][0]["status"])
+
+    def test_backfills_historical_performance_record(self):
+        with tempfile.TemporaryDirectory() as directory:
+            site_dir = Path(directory) / "docs"
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [])],
+                    "2026-08-23",
+                    historical_observations=[
+                        ("2026-08-21", 2026, "EST", [polar_boat("OLD")])
+                    ],
+                )
+            )
+
+            payload = json.loads(
+                (site_dir / "performance" / "2026" / "EST.json").read_text()
+            )
+            self.assertEqual("OLD", payload["records"][0]["ref_no"])
+            self.assertEqual("archived", payload["records"][0]["status"])
+
+    def test_certificate_history_links_only_valid_performance_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            site_dir = Path(directory) / "docs"
+            invalid = {"RefNo": "NO-POLAR", "YachtName": "No polar"}
+            write_plan(
+                build_history_site(
+                    site_dir,
+                    [(2026, "EST", [polar_boat(), invalid])],
+                    "2026-08-22",
+                )
+            )
+
+            with (
+                site_dir / "certificates" / "2026" / "certificates.csv"
+            ).open(encoding="utf-8", newline="") as source:
+                rows = {row["ref_no"]: row for row in csv.DictReader(source)}
+
+            self.assertEqual(
+                "../../performance/?year=2026&country=EST&ref=A",
+                rows["A"]["performance_url"],
+            )
+            self.assertEqual("", rows["NO-POLAR"]["performance_url"])
+
     def test_certificate_url_uses_orc_reference(self):
         self.assertEqual(
             "https://data.orc.org/public/WPub.dll/CC/04340004VU1.pdf",
