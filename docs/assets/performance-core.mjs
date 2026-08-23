@@ -178,6 +178,11 @@ export const polarPoint = (angleDegrees, boatSpeed, side, scale) => {
   };
 };
 
+export const pairedPolarPoints = (target, scale) => ({
+  left: polarPoint(target.awa, target.boatSpeed, "left", scale),
+  right: polarPoint(target.twa, target.boatSpeed, "right", scale),
+});
+
 export const interpolatePolarTarget = (start, end, ratio) => {
   return {
     twa: lerp(start.twa, end.twa, ratio),

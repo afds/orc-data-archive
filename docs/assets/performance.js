@@ -1,6 +1,7 @@
 import {
   formatWindSpeed,
   interpolatePolarTarget,
+  pairedPolarPoints,
   polarPoint,
   polarSeries,
   publishedCondition,
@@ -244,30 +245,41 @@ const renderPolar = () => {
   const palette = ["#78909c", "#5e8d94", "#2f8793", "#087f8c", "#22647a", "#314f68", "#614f75", "#a55845", "#cf6f2f", "#0b3f46"];
   const dashPatterns = ["2 4", "7 4", "1 3", "none", "10 4", "7 3 2 3", "3 3", "12 3", "5 2", "none"];
   const legendItems = [];
-  const marker = svgNode("circle", {
+  const markers = ["primary", "counterpart"].map((name) => svgNode("circle", {
     class: "polar-inspection-marker",
+    "data-marker": name,
     r: 4.5,
     hidden: "",
-  });
+  }));
   let activeGroup;
 
   const hideInspection = () => {
     activeGroup?.classList.remove("is-active");
     activeGroup = undefined;
     svg.classList.remove("is-inspecting");
-    marker.setAttribute("hidden", "");
+    for (const marker of markers) marker.setAttribute("hidden", "");
     polarTooltip.hidden = true;
   };
 
-  const showInspection = (group, color, tws, target, point, clientX, clientY) => {
+  const showInspection = (group, color, tws, target, side, point, clientX, clientY) => {
     activeGroup?.classList.remove("is-active");
     activeGroup = group;
     group.classList.add("is-active");
     svg.classList.add("is-inspecting");
-    marker.setAttribute("cx", point.x);
-    marker.setAttribute("cy", point.y);
-    marker.setAttribute("fill", color);
-    marker.removeAttribute("hidden");
+    const paired = pairedPolarPoints(target, scale);
+    const counterpartSide = side === "left" ? "right" : "left";
+    const counterpart = {
+      x: center.x + paired[counterpartSide].x,
+      y: center.y + paired[counterpartSide].y,
+    };
+    for (const [marker, markerPoint] of markers.map((marker, index) => (
+      [marker, index === 0 ? point : counterpart]
+    ))) {
+      marker.setAttribute("cx", markerPoint.x);
+      marker.setAttribute("cy", markerPoint.y);
+      marker.setAttribute("fill", color);
+      marker.removeAttribute("hidden");
+    }
     polarTooltip.replaceChildren(
       node("strong", `TWS ${formatWindSpeed(tws, state.windUnit)}`),
       node("span", `TWA ${angle(target.twa)}`),
@@ -321,6 +333,7 @@ const renderPolar = () => {
             color,
             condition.tws,
             target,
+            side,
             closest.point,
             event.clientX,
             event.clientY,
@@ -362,7 +375,7 @@ const renderPolar = () => {
       const target = interpolatePolarTarget(segment.start, segment.end, ratio);
       const point = segment.path.getPointAtLength(segment.path.getTotalLength() * ratio);
       const client = clientCoordinates(svg, point);
-      showInspection(group, color, condition.tws, target, point, client.x, client.y);
+      showInspection(group, color, condition.tws, target, "right", point, client.x, client.y);
     };
     group.addEventListener("focus", showKeyboardInspection);
     group.addEventListener("blur", hideInspection);
@@ -398,7 +411,7 @@ const renderPolar = () => {
     );
     legendItems.push(item);
   });
-  svg.append(marker);
+  svg.append(...markers);
   svg.addEventListener("mouseleave", hideInspection);
   byId("polar-legend").replaceChildren(...legendItems);
   polarTooltip.hidden = true;
