@@ -16,7 +16,7 @@ const {
 } = performanceCore;
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
 const interpolatePolarTarget = performanceCore.interpolatePolarTarget ?? (() => ({}));
-const pairedPolarPoints = performanceCore.pairedPolarPoints ?? (() => ({}));
+const oppositePolarSelection = performanceCore.oppositePolarSelection ?? (() => ({}));
 const polarSeries = performanceCore.polarSeries ?? (() => ({left: [], right: []}));
 const smoothSvgSegments = performanceCore.smoothSvgSegments ?? (() => []);
 
@@ -134,18 +134,17 @@ test("polar coordinates mirror AWA left and TWA right", () => {
   assert.deepEqual(polarPoint(180, 5, "left", 10), {x: 0, y: 50});
 });
 
-test("an inspected target maps to paired AWA and TWA polar points", () => {
-  const points = pairedPolarPoints({awa: 30, twa: 60, boatSpeed: 5}, 10);
-  assert.deepEqual(
-    Object.fromEntries(Object.entries(points).map(([side, point]) => [
-      side,
-      {x: Number(point.x.toFixed(1)), y: Number(point.y.toFixed(1))},
-    ])),
-    {
-      left: {x: -25, y: -43.3},
-      right: {x: 43.3, y: -25},
-    },
-  );
+test("a paired polar selection preserves segment progress on the opposite side", () => {
+  assert.deepEqual(oppositePolarSelection("right", 8, 0.73), {
+    side: "left",
+    segmentIndex: 8,
+    ratio: 0.73,
+  });
+  assert.deepEqual(oppositePolarSelection("left", 3, 0.2), {
+    side: "right",
+    segmentIndex: 3,
+    ratio: 0.2,
+  });
 });
 
 test("polar tooltip values interpolate continuously between adjacent targets", () => {

@@ -1,7 +1,7 @@
 import {
   formatWindSpeed,
   interpolatePolarTarget,
-  pairedPolarPoints,
+  oppositePolarSelection,
   polarPoint,
   polarSeries,
   publishedCondition,
@@ -261,17 +261,11 @@ const renderPolar = () => {
     polarTooltip.hidden = true;
   };
 
-  const showInspection = (group, color, tws, target, side, point, clientX, clientY) => {
+  const showInspection = (group, color, tws, target, point, counterpart, clientX, clientY) => {
     activeGroup?.classList.remove("is-active");
     activeGroup = group;
     group.classList.add("is-active");
     svg.classList.add("is-inspecting");
-    const paired = pairedPolarPoints(target, scale);
-    const counterpartSide = side === "left" ? "right" : "left";
-    const counterpart = {
-      x: center.x + paired[counterpartSide].x,
-      y: center.y + paired[counterpartSide].y,
-    };
     for (const [marker, markerPoint] of markers.map((marker, index) => (
       [marker, index === 0 ? point : counterpart]
     ))) {
@@ -303,7 +297,7 @@ const renderPolar = () => {
       "aria-label": `${formatWindSpeed(condition.tws, state.windUnit)} polar curve. Use left and right arrow keys to inspect targets.`,
       "aria-describedby": "polar-tooltip",
     });
-    const keyboardSegments = [];
+    const segmentsBySide = {left: [], right: []};
     for (const [side, points] of Object.entries(series)) {
       const coordinates = points.map((target) => {
         const point = polarPoint(target.angle, target.boatSpeed, side, scale);
@@ -320,6 +314,12 @@ const renderPolar = () => {
           d: pathData,
           class: "polar-hit-area",
         });
+        const segment = {
+          path: hitPath,
+          start: points[segmentIndex],
+          end: points[segmentIndex + 1],
+        };
+        segmentsBySide[side].push(segment);
         const inspect = (event) => {
           const cursor = svgCoordinates(svg, event);
           const closest = closestPointOnPath(hitPath, cursor.x, cursor.y);
@@ -328,13 +328,18 @@ const renderPolar = () => {
             points[segmentIndex + 1],
             closest.ratio,
           );
+          const paired = oppositePolarSelection(side, segmentIndex, closest.ratio);
+          const counterpartSegment = segmentsBySide[paired.side][paired.segmentIndex];
+          const counterpart = counterpartSegment.path.getPointAtLength(
+            counterpartSegment.path.getTotalLength() * paired.ratio,
+          );
           showInspection(
             group,
             color,
             condition.tws,
             target,
-            side,
             closest.point,
+            counterpart,
             event.clientX,
             event.clientY,
           );
@@ -347,9 +352,6 @@ const renderPolar = () => {
         });
         hitPath.addEventListener("pointercancel", hideInspection);
         group.append(hitPath);
-        if (side === "right") {
-          keyboardSegments.push({path: hitPath, start: points[segmentIndex], end: points[segmentIndex + 1]});
-        }
       });
       for (const endpoint of [points[0], points.at(-1)]) {
         const point = polarPoint(endpoint.angle, endpoint.boatSpeed, side, scale);
@@ -362,6 +364,7 @@ const renderPolar = () => {
         }));
       }
     }
+    const keyboardSegments = segmentsBySide.right;
     let keyboardPosition = 0;
     const showKeyboardInspection = () => {
       const segmentIndex = Math.min(
@@ -374,8 +377,13 @@ const renderPolar = () => {
       const segment = keyboardSegments[segmentIndex];
       const target = interpolatePolarTarget(segment.start, segment.end, ratio);
       const point = segment.path.getPointAtLength(segment.path.getTotalLength() * ratio);
+      const paired = oppositePolarSelection("right", segmentIndex, ratio);
+      const counterpartSegment = segmentsBySide[paired.side][paired.segmentIndex];
+      const counterpart = counterpartSegment.path.getPointAtLength(
+        counterpartSegment.path.getTotalLength() * paired.ratio,
+      );
       const client = clientCoordinates(svg, point);
-      showInspection(group, color, condition.tws, target, "right", point, client.x, client.y);
+      showInspection(group, color, condition.tws, target, point, counterpart, client.x, client.y);
     };
     group.addEventListener("focus", showKeyboardInspection);
     group.addEventListener("blur", hideInspection);
