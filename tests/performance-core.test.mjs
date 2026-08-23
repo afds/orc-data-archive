@@ -7,9 +7,11 @@ const {
   conditionAtTws,
   convertWindSpeed,
   formatWindSpeed,
+  windSpeedForDisplay,
   polarPoint,
   publishedCondition,
   readGuideState,
+  smoothSvgPath,
   writeGuideState,
 } = performanceCore;
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
@@ -81,7 +83,11 @@ test("apparent wind uses the ORC vector relation", () => {
 test("only TWS converts between knots and metres per second", () => {
   assert.equal(convertWindSpeed(10, "kt", "ms").toFixed(6), "5.144440");
   assert.equal(convertWindSpeed(5.14444, "ms", "kt").toFixed(3), "10.000");
-  assert.equal(formatWindSpeed(10, "ms"), "5.1 m/s");
+  assert.equal(windSpeedForDisplay(10, "ms"), 5);
+  assert.equal(formatWindSpeed(2.1 / 0.514444, "ms"), "2 m/s");
+  assert.equal(formatWindSpeed(2.3 / 0.514444, "ms"), "2.5 m/s");
+  assert.equal(formatWindSpeed(2.4 / 0.514444, "ms"), "2.5 m/s");
+  assert.equal(formatWindSpeed(2.5 / 0.514444, "ms"), "2.5 m/s");
   assert.equal(formatWindSpeed(10, "kt"), "10 kt");
 });
 
@@ -108,6 +114,13 @@ test("polar coordinates mirror AWA left and TWA right", () => {
   assert.deepEqual(polarPoint(90, 5, "right", 10), {x: 50, y: 0});
   assert.deepEqual(polarPoint(90, 5, "left", 10), {x: -50, y: 0});
   assert.deepEqual(polarPoint(180, 5, "left", 10), {x: 0, y: 50});
+});
+
+test("polar curves use a restrained smooth path through every target", () => {
+  assert.equal(
+    smoothSvgPath([{x: 0, y: 0}, {x: 10, y: 10}, {x: 20, y: 0}]),
+    "M 0.00 0.00 C 1.67 1.67, 6.67 10.00, 10.00 10.00 C 13.33 10.00, 18.33 1.67, 20.00 0.00",
+  );
 });
 
 test("matrix inserts one selected interpolated column in wind-speed order", () => {

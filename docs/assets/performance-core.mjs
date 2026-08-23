@@ -131,9 +131,16 @@ export const convertWindSpeed = (value, fromUnit, toUnit) => {
     : value / KNOT_TO_METRES_PER_SECOND;
 };
 
-export const formatWindSpeed = (twsKnots, unit) => {
+export const windSpeedForDisplay = (twsKnots, unit) => {
   const value = convertWindSpeed(twsKnots, "kt", unit);
-  if (unit === "ms") return `${value.toFixed(1)} m/s`;
+  return unit === "ms" ? Math.round(value * 2) / 2 : value;
+};
+
+export const formatWindSpeed = (twsKnots, unit) => {
+  const value = windSpeedForDisplay(twsKnots, unit);
+  if (unit === "ms") {
+    return `${Number.isInteger(value) ? value : value.toFixed(1)} m/s`;
+  }
   return `${Number.isInteger(value) ? value : value.toFixed(1)} kt`;
 };
 
@@ -169,6 +176,28 @@ export const polarPoint = (angleDegrees, boatSpeed, side, scale) => {
     x: cleanZero(direction * Math.sin(angle) * boatSpeed * scale),
     y: cleanZero(-Math.cos(angle) * boatSpeed * scale),
   };
+};
+
+export const smoothSvgPath = (points, tension = 1 / 6) => {
+  if (!Array.isArray(points) || points.length < 2) {
+    throw new RangeError("a polar curve needs at least two points");
+  }
+  const coordinate = ({x, y}) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  const segments = points.slice(0, -1).map((point, index) => {
+    const previous = points[index - 1] ?? point;
+    const next = points[index + 1];
+    const following = points[index + 2] ?? next;
+    const firstControl = {
+      x: point.x + (next.x - previous.x) * tension,
+      y: point.y + (next.y - previous.y) * tension,
+    };
+    const secondControl = {
+      x: next.x - (following.x - point.x) * tension,
+      y: next.y - (following.y - point.y) * tension,
+    };
+    return `C ${coordinate(firstControl)}, ${coordinate(secondControl)}, ${coordinate(next)}`;
+  });
+  return `M ${coordinate(points[0])} ${segments.join(" ")}`;
 };
 
 export const polarSeries = (condition) => {

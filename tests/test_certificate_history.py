@@ -168,6 +168,9 @@ class CertificateHistoryTests(unittest.TestCase):
             self.assertIn('id="performance-controls"', page)
             self.assertIn('id="guide-error" role="alert"', page)
             self.assertIn('id="cockpit-sheet"', page)
+            self.assertIn('id="certificate-ref"', page)
+            self.assertIn('id="polar-certificate-ref"', page)
+            self.assertNotIn('id="vpp-year"', page)
             self.assertIn('id="polar-sheet"', page)
             self.assertIn('id="target-matrix"', page)
 

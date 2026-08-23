@@ -7,6 +7,8 @@ import {
   polarSeries,
   publishedCondition,
   readGuideState,
+  smoothSvgPath,
+  windSpeedForDisplay,
   writeGuideState,
 } from "./performance-core.mjs";
 
@@ -225,10 +227,10 @@ const renderPolar = () => {
     for (const [side, points] of Object.entries(series)) {
       const coordinates = points.map((target) => {
         const point = polarPoint(target.angle, target.boatSpeed, side, scale);
-        return `${(center.x + point.x).toFixed(2)},${(center.y + point.y).toFixed(2)}`;
-      }).join(" ");
-      group.append(svgNode("polyline", {
-        points: coordinates,
+        return {x: center.x + point.x, y: center.y + point.y};
+      });
+      group.append(svgNode("path", {
+        d: smoothSvgPath(coordinates),
         class: "polar-curve",
         stroke: color,
         "stroke-dasharray": dash,
@@ -270,8 +272,8 @@ const renderGuide = (condition) => {
   lastValidCondition = condition;
   byId("selected-tws").textContent = `${formatWindSpeed(condition.tws, state.windUnit)} targets`;
   byId("interpolated-badge").hidden = !condition.interpolated;
-  byId("beat-card").replaceChildren(renderTargetCard(condition.beat, "Best upwind VMG"));
-  byId("run-card").replaceChildren(renderTargetCard(condition.run, "Best downwind VMG"));
+  byId("beat-card").replaceChildren(renderTargetCard(condition.beat, "Beat target"));
+  byId("run-card").replaceChildren(renderTargetCard(condition.run, "Run target"));
   renderOptimumRows("beat", "beat-targets");
   renderOptimumRows("run", "run-targets");
   renderMatrix();
@@ -299,9 +301,9 @@ const renderPresets = () => {
 };
 
 const setInputFromCanonical = () => {
-  const displayed = convertWindSpeed(state.tws, "kt", state.windUnit);
-  twsInput.value = displayed.toFixed(state.windUnit === "ms" ? 1 : 1).replace(/\.0$/, "");
-  twsInput.step = state.windUnit === "ms" ? "0.1" : "0.1";
+  const displayed = windSpeedForDisplay(state.tws, state.windUnit);
+  twsInput.value = displayed.toFixed(1).replace(/\.0$/, "");
+  twsInput.step = state.windUnit === "ms" ? "0.5" : "0.1";
   twsUnitLabel.textContent = state.windUnit === "ms" ? "m/s" : "kt";
 };
 
@@ -373,7 +375,8 @@ const initialize = async () => {
   byId("yacht-name").textContent = record.yacht_name || "Unnamed yacht";
   byId("sail-number").textContent = record.sail_no || record.ref_no;
   byId("boat-summary").textContent = record.class || "Class unavailable";
-  byId("vpp-year").textContent = `VPP ${record.vpp_year}`;
+  byId("certificate-ref").textContent = `RefNo ${record.ref_no}`;
+  byId("polar-certificate-ref").textContent = `RefNo ${record.ref_no}`;
   byId("issue-date").textContent = date(record.issue_date);
   byId("certificate-status").textContent = record.status === "active" ? "Active certificate" : "Archived certificate";
   byId("official-certificate").href = record.certificate_url;
