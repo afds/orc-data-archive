@@ -145,6 +145,12 @@ export const formatWindSpeed = (twsKnots, unit) => {
   return `${Number.isInteger(value) ? value : value.toFixed(1)} kt`;
 };
 
+export const formatFixedTargetDetails = ({awa, vmg}) => {
+  finite(awa, "AWA");
+  finite(vmg, "VMG");
+  return `AWA ${awa.toFixed(0)}° · VMG ${Math.abs(vmg).toFixed(1)} kt`;
+};
+
 export const readGuideState = (params) => {
   return {
     year: params.get("year") ?? "",

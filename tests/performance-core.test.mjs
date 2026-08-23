@@ -15,6 +15,7 @@ const {
   writeGuideState,
 } = performanceCore;
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
+const formatFixedTargetDetails = performanceCore.formatFixedTargetDetails ?? (() => "");
 const interpolatePolarTarget = performanceCore.interpolatePolarTarget ?? (() => ({}));
 const oppositePolarSelection = performanceCore.oppositePolarSelection ?? (() => ({}));
 const polarHoverSeries = performanceCore.polarHoverSeries ?? ((_, candidate) => candidate);
@@ -54,6 +55,17 @@ test("ADELE fixed 10 kt target converts allowance to speed and AWA", () => {
   assert.equal(condition.fixed[0].twa, 52);
   assert.equal(condition.fixed[0].boatSpeed.toFixed(2), "6.57");
   assert.equal(condition.fixed[0].awa.toFixed(1), "31.8");
+});
+
+test("fixed target details show absolute VMG including zero at 90 degrees", () => {
+  assert.equal(
+    formatFixedTargetDetails({awa: 44.4, vmg: 0}),
+    "AWA 44° · VMG 0.0 kt",
+  );
+  assert.equal(
+    formatFixedTargetDetails({awa: 101.6, vmg: 4.2426}),
+    "AWA 102° · VMG 4.2 kt",
+  );
 });
 
 test("interpolation is linear in fixed speed, VMG, and optimum angle", () => {

@@ -1,4 +1,5 @@
 import {
+  formatFixedTargetDetails,
   formatWindSpeed,
   interpolatePolarTarget,
   oppositePolarSelection,
@@ -156,7 +157,7 @@ const renderSpeedTable = () => {
       const cell = node("td");
       cell.append(
         node("strong", `${speed(target.boatSpeed)} kt`),
-        node("small", `AWA ${angle(target.awa, true)}`),
+        node("small", formatFixedTargetDetails(target)),
       );
       row.append(cell);
     }

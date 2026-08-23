@@ -264,7 +264,7 @@ footer {
 .speed-table th, .speed-table td, .vmg-table th, .vmg-table td { text-align: center !important; }
 .speed-table th:first-child, .vmg-table th:first-child { text-align: left !important; width: 78px; }
 .speed-table tbody td { padding-block: 7px; }
-.speed-table tbody td strong { display: block; font-size: 14px; font-weight: 800; white-space: nowrap; }
+.speed-table tbody td strong { display: block; font-size: 15px; font-weight: 800; white-space: nowrap; }
 .speed-table tbody td small { color: var(--accent-dark); display: block; font-size: 9px; font-weight: 800; letter-spacing: .03em; margin-top: 2px; white-space: nowrap; }
 .vmg-table tbody td { font-size: 11px; font-weight: 700; padding-block: 6px; }
 .sheet-note { border-left: 3px solid var(--accent); color: var(--muted); display: block; font-size: 9px; margin: 12px 0 0; padding: 6px 8px; }
@@ -331,7 +331,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
   .speed-table, .vmg-table { min-width: 0 !important; }
   .speed-table th:first-child, .vmg-table th:first-child { width: 16mm; }
   .speed-table tbody td { padding-block: .8mm; }
-  .speed-table tbody td strong { font-size: 7.7pt; }
+  .speed-table tbody td strong { font-size: 8.2pt; }
   .speed-table tbody td small { font-size: 5.3pt; margin-top: .4mm; }
   .vmg-table tbody td { font-size: 6.7pt; padding-block: .7mm; }
   .performance-table-section, .speed-table, .vmg-table { break-inside: avoid; page-break-inside: avoid; }
