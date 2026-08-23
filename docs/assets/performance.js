@@ -3,6 +3,8 @@ import {
   convertWindSpeed,
   formatWindSpeed,
   matrixConditions,
+  polarPoint,
+  polarSeries,
   publishedCondition,
   readGuideState,
   writeGuideState,
@@ -53,6 +55,16 @@ const date = (value) => {
 const selectedCell = (cell, selected) => {
   if (selected) cell.dataset.selected = "true";
   return cell;
+};
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const svgNode = (tag, attributes = {}, text) => {
+  const element = document.createElementNS(SVG_NS, tag);
+  for (const [name, value] of Object.entries(attributes)) {
+    element.setAttribute(name, String(value));
+  }
+  if (text !== undefined) element.textContent = text;
+  return element;
 };
 
 const renderTargetCard = (target, heading) => {
@@ -130,6 +142,125 @@ const renderMatrix = () => {
   byId("matrix-body").replaceChildren(...rows);
 };
 
+const renderPolar = () => {
+  const published = record.allowances.wind_speeds.map((_, index) => (
+    publishedCondition(record.allowances, index)
+  ));
+  const conditions = lastValidCondition.interpolated
+    ? [...published, lastValidCondition]
+    : published;
+  const selectedIndex = conditions.findIndex(({tws}) => tws === lastValidCondition.tws);
+  const maxBoatSpeed = Math.max(...conditions.flatMap((condition) => [
+    condition.beat.boatSpeed,
+    condition.run.boatSpeed,
+    ...condition.fixed.map(({boatSpeed}) => boatSpeed),
+  ]));
+  const ringMaximum = Math.ceil(maxBoatSpeed);
+  const radius = 245;
+  const scale = radius / ringMaximum;
+  const center = {x: 460, y: 285};
+  const svg = svgNode("svg", {
+    viewBox: "0 0 920 590",
+    role: "img",
+    "aria-labelledby": "polar-title polar-description",
+  });
+  svg.append(
+    svgNode("title", {id: "polar-title"}, `${record.yacht_name} dual-angle speed polar`),
+    svgNode("desc", {id: "polar-description"}, "Apparent wind angle is plotted on the left, true wind angle on the right, and radial distance is target boat speed in knots."),
+  );
+
+  const grid = svgNode("g", {class: "polar-grid"});
+  for (let knot = 1; knot <= ringMaximum; knot += 1) {
+    grid.append(svgNode("circle", {
+      cx: center.x,
+      cy: center.y,
+      r: knot * scale,
+    }));
+    grid.append(svgNode("text", {
+      x: center.x + knot * scale + 3,
+      y: center.y - 5,
+      class: "polar-speed-label",
+    }, `${knot}`));
+  }
+  const spokeAngles = [0, 15, 30, 45, 60, 75, 90, 120, 150, 180];
+  for (const side of ["left", "right"]) {
+    for (const spoke of spokeAngles) {
+      if (side === "left" && [0, 180].includes(spoke)) continue;
+      const point = polarPoint(spoke, ringMaximum, side, scale);
+      grid.append(svgNode("line", {
+        x1: center.x,
+        y1: center.y,
+        x2: center.x + point.x,
+        y2: center.y + point.y,
+      }));
+      const labelPoint = polarPoint(spoke, ringMaximum + 0.55, side, scale);
+      grid.append(svgNode("text", {
+        x: center.x + labelPoint.x,
+        y: center.y + labelPoint.y + 3,
+        class: "polar-angle-label",
+        "text-anchor": side === "left" ? "end" : "start",
+      }, `${spoke}°`));
+    }
+  }
+  grid.append(
+    svgNode("text", {x: 90, y: 28, class: "polar-side-label"}, "AWA"),
+    svgNode("text", {x: 790, y: 28, class: "polar-side-label"}, "TWA"),
+    svgNode("text", {x: 475, y: 22, class: "polar-wind-label"}, "TRUE WIND"),
+    svgNode("path", {d: "M460 38 L460 8 M454 17 L460 8 L466 17", class: "polar-wind-arrow"}),
+  );
+  svg.append(grid);
+
+  const palette = ["#78909c", "#5e8d94", "#2f8793", "#087f8c", "#22647a", "#314f68", "#614f75", "#a55845", "#cf6f2f", "#0b3f46"];
+  const dashPatterns = ["2 4", "7 4", "1 3", "none", "10 4", "7 3 2 3", "3 3", "12 3", "5 2", "none"];
+  const legendItems = [];
+  conditions.forEach((condition, index) => {
+    const selected = index === selectedIndex;
+    const series = polarSeries(condition);
+    const color = palette[index % palette.length];
+    const dash = dashPatterns[index % dashPatterns.length];
+    const group = svgNode("g", {
+      class: `polar-series${selected ? " is-selected" : ""}`,
+      "data-tws": condition.tws,
+    });
+    for (const [side, points] of Object.entries(series)) {
+      const coordinates = points.map((target) => {
+        const point = polarPoint(target.angle, target.boatSpeed, side, scale);
+        return `${(center.x + point.x).toFixed(2)},${(center.y + point.y).toFixed(2)}`;
+      }).join(" ");
+      group.append(svgNode("polyline", {
+        points: coordinates,
+        class: "polar-curve",
+        stroke: color,
+        "stroke-dasharray": dash,
+      }));
+      for (const endpoint of [points[0], points.at(-1)]) {
+        const point = polarPoint(endpoint.angle, endpoint.boatSpeed, side, scale);
+        group.append(svgNode("circle", {
+          cx: center.x + point.x,
+          cy: center.y + point.y,
+          r: selected ? 4 : 2,
+          class: "polar-endpoint",
+          fill: color,
+        }));
+      }
+    }
+    svg.append(group);
+
+    const item = node("span", undefined, selected ? "is-selected" : "");
+    const swatch = node("i");
+    swatch.style.borderColor = color;
+    swatch.style.borderTopStyle = dash === "none" ? "solid" : "dashed";
+    item.append(
+      swatch,
+      node("b", formatWindSpeed(condition.tws, state.windUnit)),
+    );
+    if (condition.interpolated) item.append(node("small", " interpolated"));
+    legendItems.push(item);
+  });
+  byId("polar-legend").replaceChildren(...legendItems);
+  byId("polar-chart").replaceChildren(svg);
+};
+
 const syncUrl = () => {
   const params = writeGuideState(new URLSearchParams(window.location.search), state);
   window.history.replaceState(null, "", `${window.location.pathname}?${params}`);
@@ -144,6 +275,7 @@ const renderGuide = (condition) => {
   renderOptimumRows("beat", "beat-targets");
   renderOptimumRows("run", "run-targets");
   renderMatrix();
+  renderPolar();
   byId("polar-boat-name").textContent = `${record.yacht_name || "Unnamed yacht"} · ${record.sail_no || record.ref_no}`;
   controlStatus.textContent = condition.interpolated
     ? `${formatWindSpeed(condition.tws, state.windUnit)} is interpolated between published ORC values.`

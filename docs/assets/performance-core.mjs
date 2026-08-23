@@ -170,3 +170,23 @@ export const polarPoint = (angleDegrees, boatSpeed, side, scale) => {
     y: cleanZero(-Math.cos(angle) * boatSpeed * scale),
   };
 };
+
+export const polarSeries = (condition) => {
+  const targets = [
+    {...condition.beat, kind: "beat"},
+    ...condition.fixed.map((target) => ({...target, kind: "fixed"})),
+    {...condition.run, kind: "run"},
+  ];
+  return {
+    left: targets.map((target) => ({
+      angle: target.awa,
+      boatSpeed: target.boatSpeed,
+      kind: target.kind,
+    })),
+    right: targets.map((target) => ({
+      angle: target.twa,
+      boatSpeed: target.boatSpeed,
+      kind: target.kind,
+    })),
+  };
+};

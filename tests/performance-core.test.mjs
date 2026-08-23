@@ -13,6 +13,7 @@ const {
   writeGuideState,
 } = performanceCore;
 const matrixConditions = performanceCore.matrixConditions ?? (() => []);
+const polarSeries = performanceCore.polarSeries ?? (() => ({left: [], right: []}));
 
 const adeleAllowances = {
   wind_speeds: [8, 10],
@@ -120,4 +121,22 @@ test("matrix does not duplicate an exact published selection", () => {
   const columns = matrixConditions(adeleAllowances, 10);
 
   assert.deepEqual(columns.map(({tws}) => tws), [8, 10]);
+});
+
+test("polar series orders beat, fixed angles, and run on both angle systems", () => {
+  const condition = publishedCondition(adeleAllowances, 1);
+  const series = polarSeries(condition);
+
+  assert.deepEqual(
+    series.right.map(({angle: value}) => value),
+    [40, 52, 60, 152.5],
+  );
+  assert.deepEqual(
+    series.left.map(({angle: value}) => Number(value.toFixed(1))),
+    [25.3, 31.8, 36.4, 121.5],
+  );
+  assert.deepEqual(
+    series.right.map(({kind}) => kind),
+    ["beat", "fixed", "fixed", "run"],
+  );
 });

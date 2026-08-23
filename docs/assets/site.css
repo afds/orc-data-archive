@@ -285,8 +285,68 @@ footer {
 .reading-guide h3, .reading-guide p { margin: 0; }
 .reading-guide p { color: var(--muted); font-size: 10px; line-height: 1.45; }
 .guide-links { padding: 14px 0 0; }
+.polar-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; justify-content: center; margin: 8px 0 2px; }
+.polar-legend span { align-items: center; color: var(--muted); display: inline-flex; font-size: 10px; gap: 5px; }
+.polar-legend span.is-selected { color: var(--ink); font-weight: 800; }
+.polar-legend i { border-top: 3px solid; display: inline-block; width: 22px; }
+.polar-legend small { font-size: 8px; font-weight: 650; text-transform: uppercase; }
+.polar-chart { margin: 0 auto; max-width: 920px; }
+.polar-chart svg { display: block; height: auto; max-height: 650px; width: 100%; }
+.polar-grid circle, .polar-grid line { fill: none; stroke: #d7e0e4; stroke-width: 1; }
+.polar-grid text { fill: var(--muted); font-family: inherit; font-size: 9px; }
+.polar-grid .polar-speed-label { font-size: 8px; }
+.polar-grid .polar-side-label { fill: var(--ink); font-size: 15px; font-weight: 850; letter-spacing: .12em; }
+.polar-grid .polar-wind-label { fill: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .08em; }
+.polar-wind-arrow { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.5; }
+.polar-curve { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.polar-series { opacity: .78; }
+.polar-series.is-selected { opacity: 1; }
+.polar-series.is-selected .polar-curve { stroke-width: 4; }
+.polar-endpoint { stroke: #fff; stroke-width: 1; }
 
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid rgb(8 127 140 / 24%); outline-offset: 2px; }
+
+@page { size: A4 landscape; margin: 8mm; }
+
+@media print {
+  :root { color: #0b2432; }
+  body { background: #fff; }
+  .screen-only, .site-header, .performance-controls, noscript { display: none !important; }
+  .performance-main { margin: 0; max-width: none; padding: 0; }
+  #performance-guide { display: block !important; }
+  .performance-sheet {
+    border: 0;
+    break-after: page;
+    box-shadow: none;
+    height: 194mm;
+    margin: 0;
+    max-width: none;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
+    page-break-after: always;
+    width: 281mm;
+  }
+  .performance-sheet:last-child { break-after: auto; page-break-after: auto; }
+  .guide-header { margin-bottom: 3mm; padding-bottom: 2mm; }
+  .guide-header h2 { font-size: 19pt; }
+  .target-cards { gap: 3mm; }
+  .target-card { padding: 2.5mm 3mm; }
+  .target-speed { font-size: 19pt; }
+  .target-details { margin-top: 1mm; }
+  .performance-sheet h3 { margin: 3mm 0 1.5mm; }
+  .performance-sheet th, .performance-sheet td { font-size: 7.5pt; padding: 1.2mm 1.5mm; }
+  .performance-sheet caption { font-size: 8.5pt; }
+  .target-matrix td strong { font-size: 8pt; }
+  .target-matrix td small { font-size: 6.5pt; }
+  .sheet-note { font-size: 6.5pt; margin-top: 2mm; padding-block: 1mm; }
+  .matrix-section, #target-matrix { break-inside: avoid; page-break-inside: avoid; }
+  .polar-chart svg { height: 142mm; margin: 0 auto; width: auto; }
+  .polar-legend { margin: 1.5mm 0 0; }
+  .polar-curve, .polar-series, .polar-legend i { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .reading-guide { margin-top: 1mm; padding: 2mm 3mm; }
+  .guide-links { padding-top: 2mm; }
+}
 
 @media (max-width: 760px) {
   .site-header, main { padding-inline: 18px; }

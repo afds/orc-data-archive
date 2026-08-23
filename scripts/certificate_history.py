@@ -306,7 +306,7 @@ def _render_performance_page() -> bytes:
       <div class="polar-legend" id="polar-legend" aria-label="True wind speed curves"></div>
       <div class="polar-chart" id="polar-chart"></div>
       <aside class="reading-guide"><h3>Using this guide</h3><p><strong>AWA</strong> is the wind angle commonly felt and displayed aboard. <strong>TWA</strong> describes the course relative to true wind. Optimum beat and run angles maximize VMG toward a windward or leeward mark.</p><p>ORC predictions use wind referenced at 10 metres above the water. This independent rating polar is not an official ORC Speed Guide and does not identify individual sail choices.</p></aside>
-      <footer class="guide-links"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="../data-fields.html">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
+      <footer class="guide-links"><a id="official-certificate" target="_blank" rel="noopener">Official certificate</a><a href="https://github.com/afds/orc-data-archive/blob/main/docs/data-fields.md">Archive data fields</a><a href="https://data.orc.org/public/samples/Speed_Guide_Explanation.pdf">ORC polar explanation</a></footer>
     </section>
   </div>
   <noscript><p class="guide-error">JavaScript is required to calculate and display this performance guide.</p></noscript>
