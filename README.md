@@ -38,7 +38,7 @@ python scripts/update_archive.py
 
 The [daily workflow](.github/workflows/archive.yml) runs at 04:17 UTC and can
 also be started manually. It skips unchanged datasets and aborts before writing
-if a country/year dataset unexpectedly loses more than 10% of its certificate
+if a country/year dataset unexpectedly loses more than 50% of its certificate
 references.
 
 ## Reading history

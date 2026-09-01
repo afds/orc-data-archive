@@ -114,8 +114,8 @@ should abort the entire run without writing.
 ## Priority 1: broader anomaly policy
 
 The current relative deletion guard catches only disappearing references and
-uses a strict greater-than comparison, so exactly 10% removal is accepted when
-the configured limit is 10%.
+uses a strict greater-than comparison, so exactly 50% removal is accepted when
+the configured limit is 50%.
 
 A future policy could combine hard integrity rules with anomaly quarantine:
 

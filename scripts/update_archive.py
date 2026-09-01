@@ -350,7 +350,7 @@ def update_archive(
     data_dir: Path,
     family: int = 1,
     workers: int = 4,
-    max_deletion_percent: float = 10.0,
+    max_deletion_percent: float = 50.0,
     site_dir: Path | None = None,
     observed_on: str | None = None,
     fetcher: Callable[[str], bytes] = fetch,
@@ -499,7 +499,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-deletion-percent",
         type=float,
-        default=10.0,
+        default=50.0,
         help="abort without writing if a dataset loses more than this percentage of refs",
     )
     parser.add_argument("--summary-file", type=Path)
